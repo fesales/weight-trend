@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules/
+.expo/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Personal data (real history export). Use fixtures/ for sample data.
+mobile/data/history.json
+scripts/*.csv
+/data/
