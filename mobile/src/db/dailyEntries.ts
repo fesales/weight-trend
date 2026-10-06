@@ -109,6 +109,53 @@ export async function saveIntake(
   );
 }
 
+/** One row of mobile/data/history.json (written by scripts/csv-to-history.ts). */
+export type ImportRow = {
+  date: DateString;
+  weightKg: number | null;
+  caloriesKcal: number | null;
+  flags: Flag[];
+  note: string | null;
+};
+
+/**
+ * Bulk import that never overwrites: on a date that already has data, each
+ * field is only filled if it's currently empty (flags only if `[]`). Source
+ * is set to `import` only on the fields this actually fills.
+ * Run it inside a transaction; it doesn't open one itself.
+ */
+export async function importEntries(db: SQLiteDatabase, rows: ImportRow[]): Promise<void> {
+  const statement = await db.prepareAsync(
+    `INSERT INTO daily_entries (date, weight_kg, weight_source, calories_kcal, calories_source, flags, note)
+     VALUES ($date, $weightKg, $weightSource, $caloriesKcal, $caloriesSource, $flags, $note)
+     ON CONFLICT(date) DO UPDATE SET
+       weight_source = CASE WHEN daily_entries.weight_kg IS NULL
+                            THEN excluded.weight_source ELSE daily_entries.weight_source END,
+       weight_kg = COALESCE(daily_entries.weight_kg, excluded.weight_kg),
+       calories_source = CASE WHEN daily_entries.calories_kcal IS NULL
+                              THEN excluded.calories_source ELSE daily_entries.calories_source END,
+       calories_kcal = COALESCE(daily_entries.calories_kcal, excluded.calories_kcal),
+       flags = CASE WHEN daily_entries.flags = '[]' THEN excluded.flags ELSE daily_entries.flags END,
+       note = COALESCE(daily_entries.note, excluded.note),
+       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`,
+  );
+  try {
+    for (const row of rows) {
+      await statement.executeAsync({
+        $date: row.date,
+        $weightKg: row.weightKg,
+        $weightSource: row.weightKg === null ? null : "import",
+        $caloriesKcal: row.caloriesKcal,
+        $caloriesSource: row.caloriesKcal === null ? null : "import",
+        $flags: JSON.stringify(row.flags),
+        $note: row.note,
+      });
+    }
+  } finally {
+    await statement.finalizeAsync();
+  }
+}
+
 export async function deleteEntry(db: SQLiteDatabase, date: DateString): Promise<void> {
   await db.runAsync("DELETE FROM daily_entries WHERE date = ?", date);
 }

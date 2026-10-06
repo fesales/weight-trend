@@ -4,7 +4,7 @@ Personal Android app that gives me a short daily summary of my weight trend agai
 
 ## Current step
 
-v0, step 2 done. Next: step 3, history import. (Update this line as we go.)
+v0, step 3 done. Next: step 4, Settings screen. (Update this line as we go.)
 
 ## How to work with me
 
@@ -122,8 +122,16 @@ date,weight_kg,calories_kcal,flags,note
 
 - `calories_kcal` is what I ate on that date.
 - `flags` is semicolon-separated, using the keys above. Can be empty.
-- A script in `/scripts` converts it to `mobile/data/history.json`.
-- On first launch, the app upserts it by date with `source = import`.
+- Empty cells are fine (missing weigh-in or calories). Weight uses a decimal point (`78.4`); calories are whole numbers.
+- Convert it with:
+  ```bash
+  node --experimental-strip-types --no-warnings scripts/csv-to-history.ts <input.csv>
+  ```
+  The script is strict: any bad row stops it, every problem is listed by line, and nothing is written. It writes `mobile/data/history.json` (gitignored, it's my data).
+- **The app won't build without `mobile/data/history.json`.** On a fresh clone, run the script on `fixtures/history.sample.csv` (fake data) first.
+- On first launch the app imports it in one transaction and sets `meta.history_seeded_at`, so it never runs again. An empty file imports nothing and leaves the marker unset.
+- **The phone wins on conflicts**: if a date already has data, the import only fills empty fields (flags only if none set). Sources are set to `import` only on fields it filled.
+- Dev-only "Wipe imported history" button on Today: deletes rows that came only from the import (rows with a `manual` weight or calories are kept) and clears the marker; reload to re-import. Use it to swap the sample for the real history.
 
 Past calorie periods (with labels and reasons) are entered through the Settings screen, not the CSV.
 
