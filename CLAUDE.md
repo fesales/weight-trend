@@ -4,7 +4,7 @@ Personal Android app that gives me a short daily summary of my weight trend agai
 
 ## Current step
 
-v0, step 0 done. Next: step 1, Expo scaffold. (Update this line as we go.)
+v0, step 1 done. Next: step 2, SQLite schema and data layer. (Update this line as we go.)
 
 ## How to work with me
 
@@ -45,7 +45,8 @@ The data model should make the Health Connect switch easy later, but don't build
 ## Tech stack
 
 - Expo (latest SDK), React Native, TypeScript, Expo Router.
-- Android only. v0 runs in Expo Go, so no native modules.
+- Android only for v0; iOS may come later, so avoid Android-only assumptions outside Health Connect. v0 runs in Expo Go, so no native modules.
+- Routes live in `mobile/src/app/` (Expo Router); non-route code goes elsewhere under `mobile/src/`. `@/*` maps to `mobile/src/*`.
 - `expo-sqlite` for storage. Plain SQL unless there's a good reason for an ORM (Drizzle is the one to consider if so).
 - Jest for unit tests on the maths.
 - Server: Node, Express, TypeScript.
@@ -202,3 +203,4 @@ Setup:
 - (step 5/8) Compute `trend` and `status` in code instead of having the model produce them ("maths in code").
 - (step 8) Enforce the 14-day rule for `calorieAdjustment` on the server after validation, not only in the prompt.
 - (step 8) Server logs would contain all daily rows. Decide what gets logged, given the host keeps logs.
+- (step 9) Expo/EAS account: the CLI is signed in as `warble-app`, but this project should use a different account. Decide between a per-project `EXPO_TOKEN` (gitignored `.envrc`) and a global switch before `eas init`.

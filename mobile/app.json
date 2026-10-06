@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Weight Trend",
+    "slug": "weight-trend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.fesales.weighttrend"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ],
+    "scheme": "weighttrend",
+    "platforms": [
+      "android",
+      "ios"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
