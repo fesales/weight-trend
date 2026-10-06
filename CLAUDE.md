@@ -4,7 +4,7 @@ Personal Android app that gives me a short daily summary of my weight trend agai
 
 ## Current step
 
-v0, step 1 done. Next: step 2, SQLite schema and data layer. (Update this line as we go.)
+v0, step 2 done. Next: step 3, history import. (Update this line as we go.)
 
 ## How to work with me
 
@@ -79,7 +79,9 @@ These matter more than anything else here.
 - **The API key never goes in the app.** Only the server has it.
 - Units are kg and kcal. Dates are local `YYYY-MM-DD` strings.
 
-## Data model (starting point, can be refined in step 2)
+## Data model
+
+Schema lives in `mobile/src/db/migrations.ts` (append-only list; `PRAGMA user_version` tracks which have run). Data access is plain functions in `mobile/src/db/*` taking `db` from `useSQLiteContext()`.
 
 **daily_entries** (one row per date)
 - `date` TEXT primary key, `YYYY-MM-DD`
@@ -87,22 +89,27 @@ These matter more than anything else here.
 - `calories_kcal` INTEGER, nullable (calories eaten on this date)
 - `flags` TEXT, JSON array of flag keys
 - `note` TEXT, nullable
-- `source` TEXT: `import` | `manual` (later `health_connect`)
-- `created_at`, `updated_at`
+- `weight_source`, `calories_source` TEXT: `import` | `manual` (later `health_connect`), null when the value is null. Per field, because weight and calories may come from different places.
+- `created_at`, `updated_at` (UTC ISO audit timestamps)
+- Writes touch only their own columns: `saveWeighIn` sets weight; `saveIntake` sets calories, flags and note.
 
 **calorie_periods**
-- `id`, `start_date`, `end_date`, `target_kcal`, `label`
+- `id`, `start_date`, `end_date` (null = current, open-ended period), `target_kcal`, `label`
 - `reason` TEXT, nullable: why this change was made, e.g. "rate stalled at +0.1 kg/week for 3 weeks"
 
-**settings** (single row or key/value)
-- `target_weight_kg`, `target_rate_kg_per_week`
+**settings** (single row, `id = 1`)
+- `target_weight_kg`, `target_rate_kg_per_week`, both null until set
 
 **analyses** (cache, one per date, so reopening the app doesn't call the API again)
-- `date`, `request_json`, `response_json`, `created_at`
+- `date`, `request_hash`, `request_json`, `response_json`, `created_at`
+- `request_hash` is a fingerprint of the request; if it differs from the current data's, the cached analysis is stale (step 9).
+
+**meta** (key/value for app state)
+- `history_seeded_at`: set once the history import has run, so it never runs again (step 3).
 
 ### Flags (fixed list)
 
-`alcohol`, `salty_or_high_carb_meal`, `late_meal`, `poor_sleep`, `illness`, `travel`, `hard_training`. Plus a free text note for anything else. Keep the list in one place so it's easy to change.
+`alcohol`, `salty_or_high_carb_meal`, `late_meal`, `poor_sleep`, `illness`, `travel`, `hard_training`. Plus a free text note for anything else. The list lives in `mobile/src/domain/flags.ts`.
 
 ## History import format
 
@@ -192,11 +199,7 @@ Setup:
 ### Raised in review, to decide when we reach the step
 
 - (step 1/9) Expo Go loads the app from the laptop's dev server, so it won't open away from home. Use a standalone preview APK (EAS build, no native code) for daily use?
-- (step 2) Separate `weight_source` / `calories_source` instead of one `source`, since Health Connect may supply weight while calories stay manual.
-- (step 2) A marker (e.g. `PRAGMA user_version`) so the history seed only runs once and can't overwrite edits.
-- (step 2/9) Store a request hash with the cached analysis, so editing today's entry marks it stale.
-- (step 2/6) The daily form writes to two rows (weight on D; calories, flags and note on D-1). Each write updates only its own columns.
-- (step 4) Calorie periods: nullable `end_date` for the current period, no overlaps, gaps allowed.
+- (step 4) Calorie periods: overlap check on save; gaps allowed.
 - (step 5) Exact rate definitions: rolling vs calendar weeks, and how the 14/21-day rates are calculated.
 - (step 5) Sign convention for target rate (+ = gaining) and what ahead/behind means in each direction.
 - (step 5) Period boundary: which period a day's calories and weigh-in belong to, given D-1 pairing and weight lag.
