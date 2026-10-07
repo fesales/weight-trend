@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react-native";
 
 import TodayScreen from "@/app/(tabs)/index";
 
-// Screen tests live outside src/app. Expo Router treats every file there as a route.
 jest.mock("@/dev/DbStatus", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   const { Text } = jest.requireActual<typeof import("react-native")>("react-native");

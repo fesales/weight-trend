@@ -3,7 +3,6 @@ import { Text } from "react-native";
 
 import TabsLayout from "@/app/(tabs)/_layout";
 
-// Screen tests live outside src/app. Expo Router treats every file there as a route.
 describe("_layout.tsx", () => {
   describe("GIVEN the tab layout", () => {
     it("SHOULD show the Today, History and Settings tabs", async () => {
