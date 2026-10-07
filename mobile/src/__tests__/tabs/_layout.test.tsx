@@ -17,9 +17,9 @@ describe("_layout.tsx", () => {
         { initialUrl: "/" },
       );
 
-      expect(screen.getByText("Today")).toBeOnTheScreen();
-      expect(screen.getByText("History")).toBeOnTheScreen();
-      expect(screen.getByText("Settings")).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: /^Today, tab/ })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: /^History, tab/ })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: /^Settings, tab/ })).toBeOnTheScreen();
     });
   });
 });

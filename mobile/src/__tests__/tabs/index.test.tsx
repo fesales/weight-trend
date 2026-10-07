@@ -4,8 +4,8 @@ import TodayScreen from "@/app/(tabs)/index";
 
 // Screen tests live outside src/app. Expo Router treats every file there as a route.
 jest.mock("@/dev/DbStatus", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
+  const React = jest.requireActual<typeof import("react")>("react");
+  const { Text } = jest.requireActual<typeof import("react-native")>("react-native");
   return {
     DbStatus: () => React.createElement(Text, null, "db status"),
   };

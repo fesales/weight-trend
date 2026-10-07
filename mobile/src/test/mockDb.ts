@@ -21,16 +21,16 @@ export type MockDb = {
 
 export function createMockDb(): { db: SQLiteDatabase; mocks: MockDb; statement: MockStatement } {
   const statement: MockStatement = {
-    executeAsync: jest.fn(async () => undefined),
-    finalizeAsync: jest.fn(async () => undefined),
+    executeAsync: jest.fn<Promise<void>, [unknown]>(async () => undefined),
+    finalizeAsync: jest.fn<Promise<void>, []>(async () => undefined),
   };
 
   const mocks: MockDb = {
-    runAsync: jest.fn(async () => RUN_RESULT),
-    getFirstAsync: jest.fn(async () => null),
-    getAllAsync: jest.fn(async () => []),
-    execAsync: jest.fn(async () => undefined),
-    prepareAsync: jest.fn(async () => statement),
+    runAsync: jest.fn<Promise<SQLiteRunResult>, [string, ...unknown[]]>(async () => RUN_RESULT),
+    getFirstAsync: jest.fn<Promise<unknown>, [string, ...unknown[]]>(async () => null),
+    getAllAsync: jest.fn<Promise<unknown[]>, [string, ...unknown[]]>(async () => []),
+    execAsync: jest.fn<Promise<void>, [string]>(async () => undefined),
+    prepareAsync: jest.fn<Promise<MockStatement>, [string]>(async () => statement),
     withExclusiveTransactionAsync: jest.fn(async (task) => {
       await task(mocks as unknown as SQLiteDatabase);
     }),
