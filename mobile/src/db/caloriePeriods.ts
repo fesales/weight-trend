@@ -34,18 +34,31 @@ export type PeriodInput = {
   reason: string | null;
 };
 
-export async function getPeriod(db: SQLiteDatabase, id: number): Promise<CaloriePeriod | null> {
-  const row = await db.getFirstAsync<Row>("SELECT * FROM calorie_periods WHERE id = ?", id);
+export async function getPeriod(
+  db: SQLiteDatabase,
+  id: number,
+): Promise<CaloriePeriod | null> {
+  const row = await db.getFirstAsync<Row>(
+    "SELECT * FROM calorie_periods WHERE id = ?",
+    id,
+  );
   return row ? toPeriod(row) : null;
 }
 
 /** Oldest first. */
-export async function listPeriods(db: SQLiteDatabase): Promise<CaloriePeriod[]> {
-  const rows = await db.getAllAsync<Row>("SELECT * FROM calorie_periods ORDER BY start_date ASC");
+export async function listPeriods(
+  db: SQLiteDatabase,
+): Promise<CaloriePeriod[]> {
+  const rows = await db.getAllAsync<Row>(
+    "SELECT * FROM calorie_periods ORDER BY start_date ASC",
+  );
   return rows.map(toPeriod);
 }
 
-export async function insertPeriod(db: SQLiteDatabase, input: PeriodInput): Promise<number> {
+export async function insertPeriod(
+  db: SQLiteDatabase,
+  input: PeriodInput,
+): Promise<number> {
   const result = await db.runAsync(
     `INSERT INTO calorie_periods (start_date, end_date, target_kcal, label, reason)
      VALUES (?, ?, ?, ?, ?)`,
@@ -58,7 +71,11 @@ export async function insertPeriod(db: SQLiteDatabase, input: PeriodInput): Prom
   return result.lastInsertRowId;
 }
 
-export async function updatePeriod(db: SQLiteDatabase, id: number, input: PeriodInput): Promise<void> {
+export async function updatePeriod(
+  db: SQLiteDatabase,
+  id: number,
+  input: PeriodInput,
+): Promise<void> {
   await db.runAsync(
     `UPDATE calorie_periods SET
        start_date = ?, end_date = ?, target_kcal = ?, label = ?, reason = ?,
@@ -73,7 +90,10 @@ export async function updatePeriod(db: SQLiteDatabase, id: number, input: Period
   );
 }
 
-export async function deletePeriod(db: SQLiteDatabase, id: number): Promise<void> {
+export async function deletePeriod(
+  db: SQLiteDatabase,
+  id: number,
+): Promise<void> {
   await db.runAsync("DELETE FROM calorie_periods WHERE id = ?", id);
 }
 

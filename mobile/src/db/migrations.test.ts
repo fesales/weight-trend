@@ -14,9 +14,13 @@ describe("migrations.ts", () => {
   describe("GIVEN a database newer than this build", () => {
     it("SHOULD throw and leave the schema alone", async () => {
       const { db, mocks } = createMockDb();
-      mocks.getFirstAsync.mockResolvedValue({ user_version: SCHEMA_VERSION + 1 });
+      mocks.getFirstAsync.mockResolvedValue({
+        user_version: SCHEMA_VERSION + 1,
+      });
 
-      await expect(migrate(db)).rejects.toThrow(`schema v${SCHEMA_VERSION + 1}`);
+      await expect(migrate(db)).rejects.toThrow(
+        `schema v${SCHEMA_VERSION + 1}`,
+      );
       expect(mocks.withExclusiveTransactionAsync).not.toHaveBeenCalled();
     });
   });
@@ -39,10 +43,19 @@ describe("migrations.ts", () => {
 
       await migrate(db);
 
-      expect(mocks.execAsync).toHaveBeenNthCalledWith(1, "PRAGMA journal_mode = WAL");
+      expect(mocks.execAsync).toHaveBeenNthCalledWith(
+        1,
+        "PRAGMA journal_mode = WAL",
+      );
       expect(mocks.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
-      expect(mocks.execAsync).toHaveBeenNthCalledWith(2, expect.stringContaining("CREATE TABLE daily_entries"));
-      expect(mocks.execAsync).toHaveBeenNthCalledWith(3, `PRAGMA user_version = ${SCHEMA_VERSION}`);
+      expect(mocks.execAsync).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining("CREATE TABLE daily_entries"),
+      );
+      expect(mocks.execAsync).toHaveBeenNthCalledWith(
+        3,
+        `PRAGMA user_version = ${SCHEMA_VERSION}`,
+      );
     });
   });
 });

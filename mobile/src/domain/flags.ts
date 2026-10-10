@@ -12,5 +12,7 @@ export const FLAGS = [
 export type Flag = (typeof FLAGS)[number];
 
 export function isFlag(value: unknown): value is Flag {
-  return typeof value === "string" && (FLAGS as readonly string[]).includes(value);
+  return (
+    typeof value === "string" && (FLAGS as readonly string[]).includes(value)
+  );
 }

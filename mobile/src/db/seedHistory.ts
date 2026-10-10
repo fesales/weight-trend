@@ -9,7 +9,10 @@ import { getMeta, setMeta } from "./meta";
  * retries. An empty file seeds nothing and leaves the marker unset, so real
  * history can still be loaded on a later launch.
  */
-export async function seedHistoryOnce(db: SQLiteDatabase, rows: ImportRow[]): Promise<void> {
+export async function seedHistoryOnce(
+  db: SQLiteDatabase,
+  rows: ImportRow[],
+): Promise<void> {
   if (rows.length === 0) return;
   if ((await getMeta(db, "history_seeded_at")) !== null) return;
 

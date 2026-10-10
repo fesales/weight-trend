@@ -15,7 +15,11 @@ import {
 import type { CaloriePeriod } from "@/db/types";
 import { todayLocal, type DateString } from "@/domain/dates";
 import { parseDecimal } from "@/domain/numbers";
-import { planPeriodSave, validatePeriodDraft, type PeriodErrors } from "@/domain/periods";
+import {
+  planPeriodSave,
+  validatePeriodDraft,
+  type PeriodErrors,
+} from "@/domain/periods";
 import { DateField } from "@/ui/DateField";
 import { Field } from "@/ui/Field";
 import { colors } from "@/ui/theme";
@@ -28,17 +32,34 @@ type Form = {
   reason: string;
 };
 
-const EMPTY_FORM: Form = { startDate: null, endDate: null, targetKcal: "", label: "", reason: "" };
+const EMPTY_FORM: Form = {
+  startDate: null,
+  endDate: null,
+  targetKcal: "",
+  label: "",
+  reason: "",
+};
 
-function describe(period: Pick<CaloriePeriod, "label" | "startDate" | "endDate">): string {
+function describe(
+  period: Pick<CaloriePeriod, "label" | "startDate" | "endDate">,
+): string {
   return `"${period.label}" (${period.startDate} → ${period.endDate ?? "ongoing"})`;
 }
 
-function confirm(title: string, message: string, action: string, destructive = false): Promise<boolean> {
+function confirm(
+  title: string,
+  message: string,
+  action: string,
+  destructive = false,
+): Promise<boolean> {
   return new Promise((resolve) => {
     Alert.alert(title, message, [
       { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-      { text: action, style: destructive ? "destructive" : "default", onPress: () => resolve(true) },
+      {
+        text: action,
+        style: destructive ? "destructive" : "default",
+        onPress: () => resolve(true),
+      },
     ]);
   });
 }
@@ -49,7 +70,10 @@ export default function PeriodScreen() {
   const isNew = id === "new";
   const periodId = isNew ? null : Number(id);
 
-  const [form, setForm] = useState<Form>(() => ({ ...EMPTY_FORM, startDate: isNew ? todayLocal() : null }));
+  const [form, setForm] = useState<Form>(() => ({
+    ...EMPTY_FORM,
+    startDate: isNew ? todayLocal() : null,
+  }));
   const [periods, setPeriods] = useState<CaloriePeriod[]>([]);
   const [loaded, setLoaded] = useState(isNew);
   const [notFound, setNotFound] = useState(false);
@@ -85,10 +109,12 @@ export default function PeriodScreen() {
     };
   }, [db, periodId]);
 
-  const update = <K extends keyof Form>(key: K) => (value: Form[K]) => {
-    setForm((current) => ({ ...current, [key]: value }));
-    setOverlapError(null);
-  };
+  const update =
+    <K extends keyof Form>(key: K) =>
+    (value: Form[K]) => {
+      setForm((current) => ({ ...current, [key]: value }));
+      setOverlapError(null);
+    };
 
   const save = async () => {
     const draft = {
@@ -105,7 +131,9 @@ export default function PeriodScreen() {
 
     const plan = planPeriodSave(periods, input, periodId);
     if (plan.kind === "overlap") {
-      setOverlapError(`Overlaps ${describe(plan.period)}. Change the dates or edit that period first.`);
+      setOverlapError(
+        `Overlaps ${describe(plan.period)}. Change the dates or edit that period first.`,
+      );
       return;
     }
     if (plan.kind === "closePrevious") {
@@ -115,7 +143,11 @@ export default function PeriodScreen() {
         "Continue",
       );
       if (!ok) return;
-      await insertPeriodClosingPrevious(db, { id: plan.period.id, endDate: plan.endDate }, input);
+      await insertPeriodClosingPrevious(
+        db,
+        { id: plan.period.id, endDate: plan.endDate },
+        input,
+      );
     } else if (periodId === null) {
       await insertPeriod(db, input);
     } else {
@@ -126,7 +158,12 @@ export default function PeriodScreen() {
 
   const remove = async () => {
     if (periodId === null) return;
-    const ok = await confirm("Delete this period?", `"${form.label}" will be removed.`, "Delete", true);
+    const ok = await confirm(
+      "Delete this period?",
+      `"${form.label}" will be removed.`,
+      "Delete",
+      true,
+    );
     if (!ok) return;
     await deletePeriod(db, periodId);
     router.back();
@@ -144,7 +181,10 @@ export default function PeriodScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       <Stack.Screen options={{ title }} />
       {loaded ? (
         <>
@@ -163,7 +203,12 @@ export default function PeriodScreen() {
             placeholder="e.g. 2800"
             error={errors.targetKcal}
           />
-          <DateField label="Start" value={form.startDate} onChange={update("startDate")} error={errors.startDate} />
+          <DateField
+            label="Start"
+            value={form.startDate}
+            onChange={update("startDate")}
+            error={errors.startDate}
+          />
           <DateField
             label="End"
             value={form.endDate}
@@ -179,12 +224,22 @@ export default function PeriodScreen() {
             placeholder="Why this change? e.g. rate stalled at +0.1 kg/week for 3 weeks"
             multiline
           />
-          {overlapError ? <Text style={styles.error}>{overlapError}</Text> : null}
-          <Pressable accessibilityRole="button" onPress={save} style={styles.primaryButton}>
+          {overlapError ? (
+            <Text style={styles.error}>{overlapError}</Text>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            onPress={save}
+            style={styles.primaryButton}
+          >
             <Text style={styles.primaryButtonText}>Save</Text>
           </Pressable>
           {isNew ? null : (
-            <Pressable accessibilityRole="button" onPress={remove} style={styles.deleteButton}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={remove}
+              style={styles.deleteButton}
+            >
               <Text style={styles.deleteText}>Delete period</Text>
             </Pressable>
           )}
@@ -200,7 +255,12 @@ const styles = StyleSheet.create({
   container: { padding: 16, gap: 12 },
   muted: { color: colors.muted },
   error: { color: colors.danger },
-  primaryButton: { backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 12, alignItems: "center" },
+  primaryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
   primaryButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   deleteButton: { paddingVertical: 12, alignItems: "center" },
   deleteText: { color: colors.danger, fontSize: 16, fontWeight: "600" },

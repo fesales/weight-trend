@@ -17,7 +17,11 @@ jest.mock("@/db/init", () => ({ initDb: jest.fn() }));
 
 // The native stack doesn't render a header in tests, only this config view.
 function headerConfig(): Record<string, unknown> | undefined {
-  type Node = { type: string; props: Record<string, unknown>; children: (Node | string)[] | null };
+  type Node = {
+    type: string;
+    props: Record<string, unknown>;
+    children: (Node | string)[] | null;
+  };
   const found: Node[] = [];
   const walk = (node: Node | Node[] | string | null) => {
     if (node === null || typeof node === "string") return;
@@ -33,13 +37,19 @@ describe("_layout.tsx (root)", () => {
   describe("GIVEN the root layout", () => {
     it("SHOULD open the database with initDb as the startup hook", async () => {
       await renderRouter(
-        { _layout: () => <RootLayout />, "(tabs)/index": () => <Text>Today body</Text> },
+        {
+          _layout: () => <RootLayout />,
+          "(tabs)/index": () => <Text>Today body</Text>,
+        },
         { initialUrl: "/" },
       );
 
       expect(screen.getByText("Today body")).toBeOnTheScreen();
       expect(SQLiteProvider).toHaveBeenCalledWith(
-        expect.objectContaining({ databaseName: "weight-trend.db", onInit: initDb }),
+        expect.objectContaining({
+          databaseName: "weight-trend.db",
+          onInit: initDb,
+        }),
         undefined,
       );
     });
@@ -60,7 +70,10 @@ describe("_layout.tsx (root)", () => {
 
     it("SHOULD hide the header on the tabs", async () => {
       await renderRouter(
-        { _layout: () => <RootLayout />, "(tabs)/index": () => <Text>Today body</Text> },
+        {
+          _layout: () => <RootLayout />,
+          "(tabs)/index": () => <Text>Today body</Text>,
+        },
         { initialUrl: "/" },
       );
 

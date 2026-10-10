@@ -1,7 +1,23 @@
-import { findOverlap, planPeriodSave, validatePeriodDraft, type PeriodDraft, type PeriodRange } from "./periods";
+import {
+  findOverlap,
+  planPeriodSave,
+  validatePeriodDraft,
+  type PeriodDraft,
+  type PeriodRange,
+} from "./periods";
 
-const BULK: PeriodRange = { id: 1, label: "Bulk", startDate: "2026-08-01", endDate: "2026-08-31" };
-const CURRENT: PeriodRange = { id: 2, label: "Bulk 2", startDate: "2026-09-10", endDate: null };
+const BULK: PeriodRange = {
+  id: 1,
+  label: "Bulk",
+  startDate: "2026-08-01",
+  endDate: "2026-08-31",
+};
+const CURRENT: PeriodRange = {
+  id: 2,
+  label: "Bulk 2",
+  startDate: "2026-09-10",
+  endDate: null,
+};
 
 const DRAFT: PeriodDraft = {
   startDate: "2026-09-01",
@@ -76,7 +92,11 @@ describe("periods.ts", () => {
 
       const result = planPeriodSave([BULK, CURRENT], candidate);
 
-      expect(result).toEqual({ kind: "closePrevious", period: CURRENT, endDate: "2026-09-30" });
+      expect(result).toEqual({
+        kind: "closePrevious",
+        period: CURRENT,
+        endDate: "2026-09-30",
+      });
     });
 
     it("SHOULD block a new current period starting on the same day as the open one", () => {
@@ -112,7 +132,12 @@ describe("periods.ts", () => {
     });
 
     it("SHOULD block when closing the open period still leaves a clash", () => {
-      const later: PeriodRange = { id: 3, label: "Future", startDate: "2026-11-01", endDate: "2026-11-30" };
+      const later: PeriodRange = {
+        id: 3,
+        label: "Future",
+        startDate: "2026-11-01",
+        endDate: "2026-11-30",
+      };
       const candidate = { startDate: "2026-10-01", endDate: null };
 
       const result = planPeriodSave([CURRENT, later], candidate);
@@ -154,16 +179,26 @@ describe("periods.ts", () => {
       expect(result).toEqual({ endDate: "End date is before the start" });
     });
 
-    it.each([499, 10001, 2800.5, Number.NaN])("SHOULD flag a target of %p kcal", (targetKcal) => {
-      const draft = { ...DRAFT, targetKcal };
+    it.each([499, 10001, 2800.5, Number.NaN])(
+      "SHOULD flag a target of %p kcal",
+      (targetKcal) => {
+        const draft = { ...DRAFT, targetKcal };
 
-      const result = validatePeriodDraft(draft);
+        const result = validatePeriodDraft(draft);
 
-      expect(result).toEqual({ targetKcal: "Whole number between 500 and 10000" });
-    });
+        expect(result).toEqual({
+          targetKcal: "Whole number between 500 and 10000",
+        });
+      },
+    );
 
     it("SHOULD flag a blank label and invalid dates", () => {
-      const draft = { ...DRAFT, label: "  ", startDate: "", endDate: "2026-02-30" };
+      const draft = {
+        ...DRAFT,
+        label: "  ",
+        startDate: "",
+        endDate: "2026-02-30",
+      };
 
       const result = validatePeriodDraft(draft);
 

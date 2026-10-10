@@ -15,7 +15,7 @@ const ROW = {
   weight_source: "manual",
   calories_kcal: 2500,
   calories_source: "manual",
-  flags: "[\"late_meal\"]",
+  flags: '["late_meal"]',
   note: "test",
   created_at: "2026-10-01T00:00:00.000Z",
   updated_at: "2026-10-01T00:00:00.000Z",
@@ -70,7 +70,10 @@ describe("dailyEntries.ts", () => {
   describe("GIVEN flags that are not a clean list", () => {
     it("SHOULD drop unknown keys", async () => {
       const { db, mocks } = createMockDb();
-      mocks.getFirstAsync.mockResolvedValue({ ...ROW, flags: "[\"late_meal\",\"nope\",1]" });
+      mocks.getFirstAsync.mockResolvedValue({
+        ...ROW,
+        flags: '["late_meal","nope",1]',
+      });
 
       const entry = await getEntry(db, "2026-10-01");
 
@@ -88,7 +91,7 @@ describe("dailyEntries.ts", () => {
 
     it("SHOULD return an empty list when the JSON is not an array", async () => {
       const { db, mocks } = createMockDb();
-      mocks.getFirstAsync.mockResolvedValue({ ...ROW, flags: "\"late_meal\"" });
+      mocks.getFirstAsync.mockResolvedValue({ ...ROW, flags: '"late_meal"' });
 
       const entry = await getEntry(db, "2026-10-01");
 
@@ -139,7 +142,7 @@ describe("dailyEntries.ts", () => {
         "2026-10-01",
         2500,
         "manual",
-        "[\"late_meal\"]",
+        '["late_meal"]',
         "test",
       );
     });
@@ -147,7 +150,11 @@ describe("dailyEntries.ts", () => {
     it("SHOULD store a null source when calories are cleared", async () => {
       const { db, mocks } = createMockDb();
 
-      await saveIntake(db, "2026-10-01", { caloriesKcal: null, flags: [], note: null });
+      await saveIntake(db, "2026-10-01", {
+        caloriesKcal: null,
+        flags: [],
+        note: null,
+      });
 
       expect(mocks.runAsync).toHaveBeenCalledWith(
         expect.stringContaining("calories_kcal"),
@@ -166,7 +173,9 @@ describe("dailyEntries.ts", () => {
 
       await importEntries(db, [IMPORT_ROW]);
 
-      expect(mocks.prepareAsync).toHaveBeenCalledWith(expect.stringContaining("COALESCE"));
+      expect(mocks.prepareAsync).toHaveBeenCalledWith(
+        expect.stringContaining("COALESCE"),
+      );
       expect(statement.executeAsync).toHaveBeenCalledWith({
         $date: "2026-10-01",
         $weightKg: 80.4,

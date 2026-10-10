@@ -92,7 +92,10 @@ describe("caloriePeriods.ts", () => {
 
       await deletePeriod(db, 3);
 
-      expect(mocks.runAsync).toHaveBeenCalledWith("DELETE FROM calorie_periods WHERE id = ?", 3);
+      expect(mocks.runAsync).toHaveBeenCalledWith(
+        "DELETE FROM calorie_periods WHERE id = ?",
+        3,
+      );
     });
   });
 
@@ -103,8 +106,13 @@ describe("caloriePeriods.ts", () => {
 
       const result = await getPeriod(db, 3);
 
-      expect(result).toEqual(expect.objectContaining({ id: 3, label: "Cut", endDate: null }));
-      expect(mocks.getFirstAsync).toHaveBeenCalledWith("SELECT * FROM calorie_periods WHERE id = ?", 3);
+      expect(result).toEqual(
+        expect.objectContaining({ id: 3, label: "Cut", endDate: null }),
+      );
+      expect(mocks.getFirstAsync).toHaveBeenCalledWith(
+        "SELECT * FROM calorie_periods WHERE id = ?",
+        3,
+      );
     });
 
     it("SHOULD return null when it doesn't exist", async () => {
@@ -123,10 +131,14 @@ describe("caloriePeriods.ts", () => {
         .mockResolvedValueOnce({ lastInsertRowId: 0, changes: 1 })
         .mockResolvedValueOnce({ lastInsertRowId: 8, changes: 1 });
 
-      const result = await insertPeriodClosingPrevious(db, { id: 3, endDate: "2026-09-30" }, {
-        ...INPUT,
-        startDate: "2026-10-01",
-      });
+      const result = await insertPeriodClosingPrevious(
+        db,
+        { id: 3, endDate: "2026-09-30" },
+        {
+          ...INPUT,
+          startDate: "2026-10-01",
+        },
+      );
 
       expect(result).toBe(8);
       expect(mocks.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
@@ -153,7 +165,11 @@ describe("caloriePeriods.ts", () => {
         .mockResolvedValueOnce({ lastInsertRowId: 0, changes: 1 })
         .mockRejectedValueOnce(new Error("CHECK constraint failed"));
 
-      const act = insertPeriodClosingPrevious(db, { id: 3, endDate: "2026-09-30" }, INPUT);
+      const act = insertPeriodClosingPrevious(
+        db,
+        { id: 3, endDate: "2026-09-30" },
+        INPUT,
+      );
 
       await expect(act).rejects.toThrow("CHECK constraint failed");
       expect(mocks.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);

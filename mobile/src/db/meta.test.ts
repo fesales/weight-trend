@@ -6,9 +6,13 @@ describe("meta.ts", () => {
   describe("GIVEN a stored value", () => {
     it("SHOULD return it", async () => {
       const { db, mocks } = createMockDb();
-      mocks.getFirstAsync.mockResolvedValue({ value: "2026-10-01T00:00:00.000Z" });
+      mocks.getFirstAsync.mockResolvedValue({
+        value: "2026-10-01T00:00:00.000Z",
+      });
 
-      await expect(getMeta(db, "history_seeded_at")).resolves.toBe("2026-10-01T00:00:00.000Z");
+      await expect(getMeta(db, "history_seeded_at")).resolves.toBe(
+        "2026-10-01T00:00:00.000Z",
+      );
       expect(mocks.getFirstAsync).toHaveBeenCalledWith(
         "SELECT value FROM meta WHERE key = ?",
         "history_seeded_at",

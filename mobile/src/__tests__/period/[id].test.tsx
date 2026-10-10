@@ -52,12 +52,21 @@ const CURRENT: CaloriePeriod = {
   createdAt: "",
   updatedAt: "",
 };
-const PAST: CaloriePeriod = { ...CURRENT, id: 1, startDate: "2026-08-24", endDate: "2026-09-14", label: "Bulk", reason: null };
+const PAST: CaloriePeriod = {
+  ...CURRENT,
+  id: 1,
+  startDate: "2026-08-24",
+  endDate: "2026-09-14",
+  label: "Bulk",
+  reason: null,
+};
 
 function answerAlertWith(buttonText: string) {
-  jest.spyOn(Alert, "alert").mockImplementation((_title, _message, buttons?: AlertButton[]) => {
-    buttons?.find((button) => button.text === buttonText)?.onPress?.();
-  });
+  jest
+    .spyOn(Alert, "alert")
+    .mockImplementation((_title, _message, buttons?: AlertButton[]) => {
+      buttons?.find((button) => button.text === buttonText)?.onPress?.();
+    });
 }
 
 async function fillNewPeriod(label: string, kcal: string) {
@@ -81,9 +90,13 @@ describe("[id].tsx", () => {
     it("SHOULD start today and be ongoing, with no delete button", async () => {
       await render(<PeriodScreen />);
 
-      expect(await screen.findByLabelText("Start: 2026-10-07")).toBeOnTheScreen();
+      expect(
+        await screen.findByLabelText("Start: 2026-10-07"),
+      ).toBeOnTheScreen();
       expect(screen.getByLabelText("End ongoing")).toHaveProp("value", true);
-      expect(screen.queryByRole("button", { name: "Delete period" })).not.toBeOnTheScreen();
+      expect(
+        screen.queryByRole("button", { name: "Delete period" }),
+      ).not.toBeOnTheScreen();
     });
 
     it("SHOULD show field errors and not save an invalid period", async () => {
@@ -93,7 +106,9 @@ describe("[id].tsx", () => {
       await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
       expect(screen.getByText("Give it a label")).toBeOnTheScreen();
-      expect(screen.getByText("Whole number between 500 and 10000")).toBeOnTheScreen();
+      expect(
+        screen.getByText("Whole number between 500 and 10000"),
+      ).toBeOnTheScreen();
       expect(insertPeriod).not.toHaveBeenCalled();
       expect(insertPeriodClosingPrevious).not.toHaveBeenCalled();
     });
@@ -102,7 +117,10 @@ describe("[id].tsx", () => {
       answerAlertWith("Continue");
       await render(<PeriodScreen />);
       await fillNewPeriod(" Bulk 3 ", "2900");
-      await fireEvent.changeText(screen.getByLabelText("Reason (optional)"), "  gaining too slowly ");
+      await fireEvent.changeText(
+        screen.getByLabelText("Reason (optional)"),
+        "  gaining too slowly ",
+      );
 
       await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
@@ -111,13 +129,17 @@ describe("[id].tsx", () => {
         'This will end "Bulk 2" on 2026-10-06, the day before this one starts.',
         expect.any(Array),
       );
-      expect(insertPeriodClosingPrevious).toHaveBeenCalledWith(expect.anything(), { id: 2, endDate: "2026-10-06" }, {
-        startDate: "2026-10-07",
-        endDate: null,
-        targetKcal: 2900,
-        label: "Bulk 3",
-        reason: "gaining too slowly",
-      });
+      expect(insertPeriodClosingPrevious).toHaveBeenCalledWith(
+        expect.anything(),
+        { id: 2, endDate: "2026-10-06" },
+        {
+          startDate: "2026-10-07",
+          endDate: null,
+          targetKcal: 2900,
+          label: "Bulk 3",
+          reason: "gaining too slowly",
+        },
+      );
       expect(router.back).toHaveBeenCalled();
     });
 
@@ -140,7 +162,10 @@ describe("[id].tsx", () => {
 
       await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
-      expect(insertPeriod).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ label: "Cut", targetKcal: 2400 }));
+      expect(insertPeriod).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ label: "Cut", targetKcal: 2400 }),
+      );
       expect(router.back).toHaveBeenCalled();
     });
   });
@@ -155,7 +180,9 @@ describe("[id].tsx", () => {
       await render(<PeriodScreen />);
 
       expect(await screen.findByDisplayValue("Bulk")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Target (kcal/day)")).toHaveDisplayValue("2850");
+      expect(screen.getByLabelText("Target (kcal/day)")).toHaveDisplayValue(
+        "2850",
+      );
       expect(screen.getByLabelText("Start: 2026-08-24")).toBeOnTheScreen();
       expect(screen.getByLabelText("End: 2026-09-14")).toBeOnTheScreen();
       expect(mockGetPeriod).toHaveBeenCalledWith(expect.anything(), 1);
@@ -163,7 +190,10 @@ describe("[id].tsx", () => {
 
     it("SHOULD save changes as an update", async () => {
       await render(<PeriodScreen />);
-      await fireEvent.changeText(await screen.findByLabelText("Target (kcal/day)"), "2750");
+      await fireEvent.changeText(
+        await screen.findByLabelText("Target (kcal/day)"),
+        "2750",
+      );
 
       await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
@@ -179,12 +209,18 @@ describe("[id].tsx", () => {
 
     it("SHOULD block an overlap and name the clashing period", async () => {
       await render(<PeriodScreen />);
-      await fireEvent(await screen.findByLabelText("End ongoing"), "valueChange", true);
+      await fireEvent(
+        await screen.findByLabelText("End ongoing"),
+        "valueChange",
+        true,
+      );
 
       await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
       expect(
-        screen.getByText('Overlaps "Bulk 2" (2026-09-15 → ongoing). Change the dates or edit that period first.'),
+        screen.getByText(
+          'Overlaps "Bulk 2" (2026-09-15 → ongoing). Change the dates or edit that period first.',
+        ),
       ).toBeOnTheScreen();
       expect(updatePeriod).not.toHaveBeenCalled();
     });
@@ -193,7 +229,9 @@ describe("[id].tsx", () => {
       answerAlertWith("Delete");
       await render(<PeriodScreen />);
 
-      await fireEvent.press(await screen.findByRole("button", { name: "Delete period" }));
+      await fireEvent.press(
+        await screen.findByRole("button", { name: "Delete period" }),
+      );
 
       expect(deletePeriod).toHaveBeenCalledWith(expect.anything(), 1);
       expect(router.back).toHaveBeenCalled();
@@ -203,7 +241,9 @@ describe("[id].tsx", () => {
       answerAlertWith("Cancel");
       await render(<PeriodScreen />);
 
-      await fireEvent.press(await screen.findByRole("button", { name: "Delete period" }));
+      await fireEvent.press(
+        await screen.findByRole("button", { name: "Delete period" }),
+      );
 
       expect(deletePeriod).not.toHaveBeenCalled();
       expect(router.back).not.toHaveBeenCalled();
@@ -216,7 +256,9 @@ describe("[id].tsx", () => {
 
       await render(<PeriodScreen />);
 
-      expect(await screen.findByText("This period no longer exists.")).toBeOnTheScreen();
+      expect(
+        await screen.findByText("This period no longer exists."),
+      ).toBeOnTheScreen();
     });
   });
 });

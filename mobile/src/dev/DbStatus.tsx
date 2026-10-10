@@ -3,7 +3,12 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, StyleSheet, Text, View } from "react-native";
 
-import { deleteEntry, getEntry, saveIntake, saveWeighIn } from "@/db/dailyEntries";
+import {
+  deleteEntry,
+  getEntry,
+  saveIntake,
+  saveWeighIn,
+} from "@/db/dailyEntries";
 import { getMeta } from "@/db/meta";
 import { getSchemaVersion } from "@/db/migrations";
 import { wipeImportedHistory } from "@/db/seedHistory";
@@ -19,15 +24,23 @@ export function DbStatus() {
   const refresh = useCallback(async () => {
     const version = await getSchemaVersion(db);
     const count = async (table: string) =>
-      (await db.getFirstAsync<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table}`))?.n ?? 0;
+      (
+        await db.getFirstAsync<{ n: number }>(
+          `SELECT COUNT(*) AS n FROM ${table}`,
+        )
+      )?.n ?? 0;
     const [entries, periods, analyses] = await Promise.all([
       count("daily_entries"),
       count("calorie_periods"),
       count("analyses"),
     ]);
     const seededAt = await getMeta(db, "history_seeded_at");
-    const history = seededAt ? `history seeded ${seededAt.slice(0, 10)}` : "history not seeded";
-    setStatus(`schema v${version} · entries ${entries} · periods ${periods} · analyses ${analyses}\n${history}`);
+    const history = seededAt
+      ? `history seeded ${seededAt.slice(0, 10)}`
+      : "history not seeded";
+    setStatus(
+      `schema v${version} · entries ${entries} · periods ${periods} · analyses ${analyses}\n${history}`,
+    );
   }, [db]);
 
   useEffect(() => {
@@ -37,7 +50,11 @@ export function DbStatus() {
   const runRoundTrip = async () => {
     try {
       await saveWeighIn(db, SENTINEL_DATE, 80.5);
-      await saveIntake(db, SENTINEL_DATE, { caloriesKcal: 2500, flags: ["late_meal"], note: "test" });
+      await saveIntake(db, SENTINEL_DATE, {
+        caloriesKcal: 2500,
+        flags: ["late_meal"],
+        note: "test",
+      });
       // Write the weight again: it must not wipe the intake saved above.
       await saveWeighIn(db, SENTINEL_DATE, 80.4);
       const row = await getEntry(db, SENTINEL_DATE);
@@ -47,7 +64,9 @@ export function DbStatus() {
         row.caloriesKcal === 2500 &&
         row.flags.join() === "late_meal" &&
         row.note === "test";
-      setMessage(ok ? "round-trip OK" : `round-trip FAILED: ${JSON.stringify(row)}`);
+      setMessage(
+        ok ? "round-trip OK" : `round-trip FAILED: ${JSON.stringify(row)}`,
+      );
     } catch (e) {
       setMessage(`round-trip error: ${String(e)}`);
     } finally {
@@ -84,7 +103,11 @@ export function DbStatus() {
     <View style={styles.container}>
       <Text style={styles.text}>{status}</Text>
       <Button title="DB round-trip" onPress={runRoundTrip} />
-      <Button title="Wipe imported history" color="#b00020" onPress={confirmWipe} />
+      <Button
+        title="Wipe imported history"
+        color="#b00020"
+        onPress={confirmWipe}
+      />
       {message && <Text style={styles.text}>{message}</Text>}
     </View>
   );

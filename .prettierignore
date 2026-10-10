@@ -1,0 +1,7 @@
+node_modules
+.expo
+dist
+mobile/data
+data
+package-lock.json
+*.md

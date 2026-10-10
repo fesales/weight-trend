@@ -1,7 +1,12 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
-import { parseDateString, todayLocal, toDateString, type DateString } from "@/domain/dates";
+import {
+  parseDateString,
+  todayLocal,
+  toDateString,
+  type DateString,
+} from "@/domain/dates";
 
 import { colors } from "./theme";
 
@@ -14,7 +19,14 @@ type Props = {
   defaultDate?: DateString;
 };
 
-export function DateField({ label, value, onChange, error, allowOngoing = false, defaultDate }: Props) {
+export function DateField({
+  label,
+  value,
+  onChange,
+  error,
+  allowOngoing = false,
+  defaultDate,
+}: Props) {
   const ongoing = allowOngoing && value === null;
 
   const openPicker = () => {
@@ -37,7 +49,9 @@ export function DateField({ label, value, onChange, error, allowOngoing = false,
           <Switch
             accessibilityLabel={`${label} ongoing`}
             value={ongoing}
-            onValueChange={(on) => onChange(on ? null : (defaultDate ?? todayLocal()))}
+            onValueChange={(on) =>
+              onChange(on ? null : (defaultDate ?? todayLocal()))
+            }
           />
         </View>
       ) : null}
@@ -48,7 +62,9 @@ export function DateField({ label, value, onChange, error, allowOngoing = false,
           onPress={openPicker}
           style={[styles.button, error ? styles.buttonError : null]}
         >
-          <Text style={value ? styles.value : styles.placeholder}>{value ?? "Pick a date"}</Text>
+          <Text style={value ? styles.value : styles.placeholder}>
+            {value ?? "Pick a date"}
+          </Text>
         </Pressable>
       )}
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -59,7 +75,11 @@ export function DateField({ label, value, onChange, error, allowOngoing = false,
 const styles = StyleSheet.create({
   container: { gap: 4 },
   label: { fontSize: 14, fontWeight: "600", color: colors.text },
-  ongoingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  ongoingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   ongoingText: { fontSize: 14, color: colors.text },
   button: {
     borderWidth: 1,

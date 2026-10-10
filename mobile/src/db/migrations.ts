@@ -59,7 +59,9 @@ const MIGRATIONS: string[] = [
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
 export async function getSchemaVersion(db: SQLiteDatabase): Promise<number> {
-  const row = await db.getFirstAsync<{ user_version: number }>("PRAGMA user_version");
+  const row = await db.getFirstAsync<{ user_version: number }>(
+    "PRAGMA user_version",
+  );
   return row?.user_version ?? 0;
 }
 
@@ -71,7 +73,9 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
 
   const current = await getSchemaVersion(db);
   if (current > SCHEMA_VERSION) {
-    throw new Error(`Database is at schema v${current}, but this build only knows v${SCHEMA_VERSION}`);
+    throw new Error(
+      `Database is at schema v${current}, but this build only knows v${SCHEMA_VERSION}`,
+    );
   }
   if (current === SCHEMA_VERSION) return;
 

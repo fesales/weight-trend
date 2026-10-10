@@ -16,10 +16,13 @@ describe("numbers.ts", () => {
       expect(result).toBe(expected);
     });
 
-    it.each(["", "   ", "abc", "78.4.1", "78,4,1", "1e3", "--1", "-", "78 kg"])("SHOULD return null for %p", (input) => {
-      const result = parseDecimal(input);
+    it.each(["", "   ", "abc", "78.4.1", "78,4,1", "1e3", "--1", "-", "78 kg"])(
+      "SHOULD return null for %p",
+      (input) => {
+        const result = parseDecimal(input);
 
-      expect(result).toBeNull();
-    });
+        expect(result).toBeNull();
+      },
+    );
   });
 });

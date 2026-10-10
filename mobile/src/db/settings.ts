@@ -32,7 +32,11 @@ export async function updateSettings(
        target_weight_kg = ?, target_rate_kg_per_week = ?,
        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
      WHERE id = 1`,
-    patch.targetWeightKg !== undefined ? patch.targetWeightKg : current.targetWeightKg,
-    patch.targetRateKgPerWeek !== undefined ? patch.targetRateKgPerWeek : current.targetRateKgPerWeek,
+    patch.targetWeightKg !== undefined
+      ? patch.targetWeightKg
+      : current.targetWeightKg,
+    patch.targetRateKgPerWeek !== undefined
+      ? patch.targetRateKgPerWeek
+      : current.targetRateKgPerWeek,
   );
 }

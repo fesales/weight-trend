@@ -26,10 +26,7 @@
       "@react-native-community/datetimepicker"
     ],
     "scheme": "weighttrend",
-    "platforms": [
-      "android",
-      "ios"
-    ],
+    "platforms": ["android", "ios"],
     "experiments": {
       "typedRoutes": true
     }

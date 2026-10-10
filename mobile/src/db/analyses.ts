@@ -10,8 +10,14 @@ type Row = {
   created_at: string;
 };
 
-export async function getAnalysis(db: SQLiteDatabase, date: DateString): Promise<CachedAnalysis | null> {
-  const row = await db.getFirstAsync<Row>("SELECT * FROM analyses WHERE date = ?", date);
+export async function getAnalysis(
+  db: SQLiteDatabase,
+  date: DateString,
+): Promise<CachedAnalysis | null> {
+  const row = await db.getFirstAsync<Row>(
+    "SELECT * FROM analyses WHERE date = ?",
+    date,
+  );
   if (!row) return null;
   return {
     date: row.date,
@@ -25,7 +31,10 @@ export async function getAnalysis(db: SQLiteDatabase, date: DateString): Promise
 /** One cached analysis per date; saving again replaces it. */
 export async function saveAnalysis(
   db: SQLiteDatabase,
-  analysis: Pick<CachedAnalysis, "date" | "requestHash" | "requestJson" | "responseJson">,
+  analysis: Pick<
+    CachedAnalysis,
+    "date" | "requestHash" | "requestJson" | "responseJson"
+  >,
 ): Promise<void> {
   await db.runAsync(
     `INSERT OR REPLACE INTO analyses (date, request_hash, request_json, response_json)

@@ -39,14 +39,22 @@ function toEntry(row: Row): DailyEntry {
   };
 }
 
-export async function getEntry(db: SQLiteDatabase, date: DateString): Promise<DailyEntry | null> {
-  const row = await db.getFirstAsync<Row>("SELECT * FROM daily_entries WHERE date = ?", date);
+export async function getEntry(
+  db: SQLiteDatabase,
+  date: DateString,
+): Promise<DailyEntry | null> {
+  const row = await db.getFirstAsync<Row>(
+    "SELECT * FROM daily_entries WHERE date = ?",
+    date,
+  );
   return row ? toEntry(row) : null;
 }
 
 /** Newest first. */
 export async function listEntries(db: SQLiteDatabase): Promise<DailyEntry[]> {
-  const rows = await db.getAllAsync<Row>("SELECT * FROM daily_entries ORDER BY date DESC");
+  const rows = await db.getAllAsync<Row>(
+    "SELECT * FROM daily_entries ORDER BY date DESC",
+  );
   return rows.map(toEntry);
 }
 
@@ -124,7 +132,10 @@ export type ImportRow = {
  * is set to `import` only on the fields this actually fills.
  * Run it inside a transaction; it doesn't open one itself.
  */
-export async function importEntries(db: SQLiteDatabase, rows: ImportRow[]): Promise<void> {
+export async function importEntries(
+  db: SQLiteDatabase,
+  rows: ImportRow[],
+): Promise<void> {
   const statement = await db.prepareAsync(
     `INSERT INTO daily_entries (date, weight_kg, weight_source, calories_kcal, calories_source, flags, note)
      VALUES ($date, $weightKg, $weightSource, $caloriesKcal, $caloriesSource, $flags, $note)
@@ -156,6 +167,9 @@ export async function importEntries(db: SQLiteDatabase, rows: ImportRow[]): Prom
   }
 }
 
-export async function deleteEntry(db: SQLiteDatabase, date: DateString): Promise<void> {
+export async function deleteEntry(
+  db: SQLiteDatabase,
+  date: DateString,
+): Promise<void> {
   await db.runAsync("DELETE FROM daily_entries WHERE date = ?", date);
 }

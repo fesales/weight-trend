@@ -37,7 +37,11 @@ describe("settings.ts", () => {
 
       await updateSettings(db, { targetWeightKg: 74 });
 
-      expect(mocks.runAsync).toHaveBeenCalledWith(expect.stringContaining("UPDATE settings"), 74, -0.5);
+      expect(mocks.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE settings"),
+        74,
+        -0.5,
+      );
     });
 
     it("SHOULD clear a field set to null", async () => {
@@ -46,7 +50,11 @@ describe("settings.ts", () => {
 
       await updateSettings(db, { targetRateKgPerWeek: null });
 
-      expect(mocks.runAsync).toHaveBeenCalledWith(expect.stringContaining("UPDATE settings"), 75, null);
+      expect(mocks.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE settings"),
+        75,
+        null,
+      );
     });
   });
 });

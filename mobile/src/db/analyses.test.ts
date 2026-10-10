@@ -6,7 +6,7 @@ const ROW = {
   date: "2026-10-01",
   request_hash: "abc",
   request_json: "{}",
-  response_json: "{\"trend\":\"stable\"}",
+  response_json: '{"trend":"stable"}',
   created_at: "2026-10-01T00:00:00.000Z",
 };
 
@@ -28,7 +28,7 @@ describe("analyses.ts", () => {
         date: "2026-10-01",
         requestHash: "abc",
         requestJson: "{}",
-        responseJson: "{\"trend\":\"stable\"}",
+        responseJson: '{"trend":"stable"}',
         createdAt: "2026-10-01T00:00:00.000Z",
       });
     });
@@ -42,7 +42,7 @@ describe("analyses.ts", () => {
         date: "2026-10-01",
         requestHash: "abc",
         requestJson: "{}",
-        responseJson: "{\"trend\":\"stable\"}",
+        responseJson: '{"trend":"stable"}',
       });
 
       expect(mocks.runAsync).toHaveBeenCalledWith(
@@ -50,7 +50,7 @@ describe("analyses.ts", () => {
         "2026-10-01",
         "abc",
         "{}",
-        "{\"trend\":\"stable\"}",
+        '{"trend":"stable"}',
       );
     });
   });

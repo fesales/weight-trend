@@ -16,9 +16,15 @@ describe("_layout.tsx", () => {
         { initialUrl: "/" },
       );
 
-      expect(screen.getByRole("button", { name: /^Today, tab/ })).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: /^History, tab/ })).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: /^Settings, tab/ })).toBeOnTheScreen();
+      expect(
+        screen.getByRole("button", { name: /^Today, tab/ }),
+      ).toBeOnTheScreen();
+      expect(
+        screen.getByRole("button", { name: /^History, tab/ }),
+      ).toBeOnTheScreen();
+      expect(
+        screen.getByRole("button", { name: /^Settings, tab/ }),
+      ).toBeOnTheScreen();
     });
   });
 });

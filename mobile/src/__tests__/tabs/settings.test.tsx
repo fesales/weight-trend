@@ -15,10 +15,14 @@ jest.mock("expo-router", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return {
     router: { push: jest.fn() },
-    useFocusEffect: (effect: () => void | (() => void)) => React.useEffect(effect, [effect]),
+    useFocusEffect: (effect: () => void | (() => void)) =>
+      React.useEffect(effect, [effect]),
   };
 });
-jest.mock("@/db/settings", () => ({ getSettings: jest.fn(), updateSettings: jest.fn() }));
+jest.mock("@/db/settings", () => ({
+  getSettings: jest.fn(),
+  updateSettings: jest.fn(),
+}));
 jest.mock("@/db/caloriePeriods", () => ({ listPeriods: jest.fn() }));
 
 const mockGetSettings = getSettings as jest.Mock;
@@ -42,19 +46,29 @@ function period(overrides: Partial<CaloriePeriod>): CaloriePeriod {
 describe("settings.tsx", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetSettings.mockResolvedValue({ targetWeightKg: null, targetRateKgPerWeek: null, updatedAt: "" });
+    mockGetSettings.mockResolvedValue({
+      targetWeightKg: null,
+      targetRateKgPerWeek: null,
+      updatedAt: "",
+    });
     mockListPeriods.mockResolvedValue([]);
     mockUpdateSettings.mockResolvedValue(undefined);
   });
 
   describe("GIVEN stored targets", () => {
     it("SHOULD show them, with the rate signed", async () => {
-      mockGetSettings.mockResolvedValue({ targetWeightKg: 82, targetRateKgPerWeek: 0.25, updatedAt: "" });
+      mockGetSettings.mockResolvedValue({
+        targetWeightKg: 82,
+        targetRateKgPerWeek: 0.25,
+        updatedAt: "",
+      });
 
       await render(<SettingsScreen />);
 
       expect(await screen.findByDisplayValue("82")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Target rate (kg/week)")).toHaveDisplayValue("+0.25");
+      expect(screen.getByLabelText("Target rate (kg/week)")).toHaveDisplayValue(
+        "+0.25",
+      );
     });
   });
 
@@ -63,7 +77,9 @@ describe("settings.tsx", () => {
       await render(<SettingsScreen />);
 
       expect(await screen.findByText("No periods yet.")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Target weight (kg)")).toHaveDisplayValue("");
+      expect(screen.getByLabelText("Target weight (kg)")).toHaveDisplayValue(
+        "",
+      );
     });
   });
 
@@ -71,10 +87,18 @@ describe("settings.tsx", () => {
     it("SHOULD save them and confirm", async () => {
       await render(<SettingsScreen />);
       await screen.findByText("No periods yet.");
-      await fireEvent.changeText(screen.getByLabelText("Target weight (kg)"), "82,5");
-      await fireEvent.changeText(screen.getByLabelText("Target rate (kg/week)"), "-0.5");
+      await fireEvent.changeText(
+        screen.getByLabelText("Target weight (kg)"),
+        "82,5",
+      );
+      await fireEvent.changeText(
+        screen.getByLabelText("Target rate (kg/week)"),
+        "-0.5",
+      );
 
-      await fireEvent.press(screen.getByRole("button", { name: "Save targets" }));
+      await fireEvent.press(
+        screen.getByRole("button", { name: "Save targets" }),
+      );
 
       expect(await screen.findByText("Saved")).toBeOnTheScreen();
       expect(mockUpdateSettings).toHaveBeenCalledWith(expect.anything(), {
@@ -88,13 +112,25 @@ describe("settings.tsx", () => {
     it("SHOULD show the errors and not save", async () => {
       await render(<SettingsScreen />);
       await screen.findByText("No periods yet.");
-      await fireEvent.changeText(screen.getByLabelText("Target weight (kg)"), "820");
-      await fireEvent.changeText(screen.getByLabelText("Target rate (kg/week)"), "fast");
+      await fireEvent.changeText(
+        screen.getByLabelText("Target weight (kg)"),
+        "820",
+      );
+      await fireEvent.changeText(
+        screen.getByLabelText("Target rate (kg/week)"),
+        "fast",
+      );
 
-      await fireEvent.press(screen.getByRole("button", { name: "Save targets" }));
+      await fireEvent.press(
+        screen.getByRole("button", { name: "Save targets" }),
+      );
 
-      expect(await screen.findByText("Number between 30 and 300 kg")).toBeOnTheScreen();
-      expect(screen.getByText("Number between -2 and +2 kg/week")).toBeOnTheScreen();
+      expect(
+        await screen.findByText("Number between 30 and 300 kg"),
+      ).toBeOnTheScreen();
+      expect(
+        screen.getByText("Number between -2 and +2 kg/week"),
+      ).toBeOnTheScreen();
       expect(mockUpdateSettings).not.toHaveBeenCalled();
     });
   });
@@ -102,14 +138,29 @@ describe("settings.tsx", () => {
   describe("GIVEN stored calorie periods", () => {
     it("SHOULD list them newest first with their details", async () => {
       mockListPeriods.mockResolvedValue([
-        period({ id: 1, label: "Bulk", startDate: "2026-08-24", endDate: "2026-09-14", reason: "start" }),
-        period({ id: 2, label: "Bulk 2", startDate: "2026-09-15", endDate: null, targetKcal: 2850 }),
+        period({
+          id: 1,
+          label: "Bulk",
+          startDate: "2026-08-24",
+          endDate: "2026-09-14",
+          reason: "start",
+        }),
+        period({
+          id: 2,
+          label: "Bulk 2",
+          startDate: "2026-09-15",
+          endDate: null,
+          targetKcal: 2850,
+        }),
       ]);
 
       await render(<SettingsScreen />);
 
       const rows = await screen.findAllByRole("button", { name: /^Edit / });
-      expect(rows.map((row) => row.props.accessibilityLabel)).toEqual(["Edit Bulk 2", "Edit Bulk"]);
+      expect(rows.map((row) => row.props.accessibilityLabel)).toEqual([
+        "Edit Bulk 2",
+        "Edit Bulk",
+      ]);
       expect(screen.getByText("Bulk 2 · 2,850 kcal")).toBeOnTheScreen();
       expect(screen.getByText("2026-09-15 → ongoing")).toBeOnTheScreen();
       expect(screen.getByText("start")).toBeOnTheScreen();
@@ -119,7 +170,9 @@ describe("settings.tsx", () => {
       mockListPeriods.mockResolvedValue([period({ id: 7 })]);
       await render(<SettingsScreen />);
 
-      await fireEvent.press(await screen.findByRole("button", { name: "Edit Bulk" }));
+      await fireEvent.press(
+        await screen.findByRole("button", { name: "Edit Bulk" }),
+      );
 
       expect(router.push).toHaveBeenCalledWith("/period/7");
     });

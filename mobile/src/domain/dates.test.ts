@@ -1,21 +1,35 @@
-import { addDays, isRealDate, parseDateString, toDateString, todayLocal } from "./dates";
+import {
+  addDays,
+  isRealDate,
+  parseDateString,
+  toDateString,
+  todayLocal,
+} from "./dates";
 
 describe("dates.ts", () => {
   describe("GIVEN a candidate date string", () => {
-    it.each(["2026-10-07", "2024-02-29", "2026-12-31"])("SHOULD accept %s", (value) => {
-      const result = isRealDate(value);
-
-      expect(result).toBe(true);
-    });
-
-    it.each(["2026-02-30", "2025-02-29", "2026-13-01", "2026-1-7", "07/10/2026", "", "2026-10-07T00:00"])(
-      "SHOULD reject %p",
+    it.each(["2026-10-07", "2024-02-29", "2026-12-31"])(
+      "SHOULD accept %s",
       (value) => {
         const result = isRealDate(value);
 
-        expect(result).toBe(false);
+        expect(result).toBe(true);
       },
     );
+
+    it.each([
+      "2026-02-30",
+      "2025-02-29",
+      "2026-13-01",
+      "2026-1-7",
+      "07/10/2026",
+      "",
+      "2026-10-07T00:00",
+    ])("SHOULD reject %p", (value) => {
+      const result = isRealDate(value);
+
+      expect(result).toBe(false);
+    });
   });
 
   describe("GIVEN a date and a day offset", () => {
@@ -62,7 +76,12 @@ describe("dates.ts", () => {
     it("SHOULD return local midnight of that day", () => {
       const result = parseDateString("2026-10-07");
 
-      expect([result.getFullYear(), result.getMonth(), result.getDate(), result.getHours()]).toEqual([2026, 9, 7, 0]);
+      expect([
+        result.getFullYear(),
+        result.getMonth(),
+        result.getDate(),
+        result.getHours(),
+      ]).toEqual([2026, 9, 7, 0]);
     });
 
     it("SHOULD round-trip through toDateString", () => {

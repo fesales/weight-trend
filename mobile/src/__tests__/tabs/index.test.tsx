@@ -4,7 +4,8 @@ import TodayScreen from "@/app/(tabs)/index";
 
 jest.mock("@/dev/DbStatus", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  const { Text } = jest.requireActual<typeof import("react-native")>("react-native");
+  const { Text } =
+    jest.requireActual<typeof import("react-native")>("react-native");
   return {
     DbStatus: () => React.createElement(Text, null, "db status"),
   };

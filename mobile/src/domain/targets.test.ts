@@ -7,7 +7,11 @@ describe("targets.ts", () => {
 
       const result = parseTargets(input);
 
-      expect(result).toEqual({ ok: true, targetWeightKg: 82.5, targetRateKgPerWeek: -0.25 });
+      expect(result).toEqual({
+        ok: true,
+        targetWeightKg: 82.5,
+        targetRateKgPerWeek: -0.25,
+      });
     });
 
     it("SHOULD treat blank fields as not set", () => {
@@ -15,7 +19,11 @@ describe("targets.ts", () => {
 
       const result = parseTargets(input);
 
-      expect(result).toEqual({ ok: true, targetWeightKg: null, targetRateKgPerWeek: null });
+      expect(result).toEqual({
+        ok: true,
+        targetWeightKg: null,
+        targetRateKgPerWeek: null,
+      });
     });
 
     it.each(["2", "-2", "0"])("SHOULD accept a rate of %s", (targetRate) => {
@@ -28,28 +36,43 @@ describe("targets.ts", () => {
   });
 
   describe("GIVEN invalid targets", () => {
-    it.each(["29", "301", "abc"])("SHOULD reject a target weight of %p", (targetWeight) => {
-      const input = { targetWeight, targetRate: "" };
+    it.each(["29", "301", "abc"])(
+      "SHOULD reject a target weight of %p",
+      (targetWeight) => {
+        const input = { targetWeight, targetRate: "" };
 
-      const result = parseTargets(input);
+        const result = parseTargets(input);
 
-      expect(result).toEqual({ ok: false, errors: { targetWeight: "Number between 30 and 300 kg" } });
-    });
+        expect(result).toEqual({
+          ok: false,
+          errors: { targetWeight: "Number between 30 and 300 kg" },
+        });
+      },
+    );
 
-    it.each(["2.1", "-3", "fast"])("SHOULD reject a rate of %p", (targetRate) => {
-      const input = { targetWeight: "", targetRate };
+    it.each(["2.1", "-3", "fast"])(
+      "SHOULD reject a rate of %p",
+      (targetRate) => {
+        const input = { targetWeight: "", targetRate };
 
-      const result = parseTargets(input);
+        const result = parseTargets(input);
 
-      expect(result).toEqual({ ok: false, errors: { targetRate: "Number between -2 and +2 kg/week" } });
-    });
+        expect(result).toEqual({
+          ok: false,
+          errors: { targetRate: "Number between -2 and +2 kg/week" },
+        });
+      },
+    );
 
     it("SHOULD report both fields at once", () => {
       const input = { targetWeight: "1000", targetRate: "5" };
 
       const result = parseTargets(input);
 
-      expect(result.ok === false && Object.keys(result.errors).sort()).toEqual(["targetRate", "targetWeight"]);
+      expect(result.ok === false && Object.keys(result.errors).sort()).toEqual([
+        "targetRate",
+        "targetWeight",
+      ]);
     });
   });
 

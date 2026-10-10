@@ -24,10 +24,21 @@ export default function SettingsScreen() {
     useCallback(() => {
       let active = true;
       (async () => {
-        const [settings, stored] = await Promise.all([getSettings(db), listPeriods(db)]);
+        const [settings, stored] = await Promise.all([
+          getSettings(db),
+          listPeriods(db),
+        ]);
         if (!active) return;
-        setTargetWeight(settings.targetWeightKg === null ? "" : String(settings.targetWeightKg));
-        setTargetRate(settings.targetRateKgPerWeek === null ? "" : formatRate(settings.targetRateKgPerWeek));
+        setTargetWeight(
+          settings.targetWeightKg === null
+            ? ""
+            : String(settings.targetWeightKg),
+        );
+        setTargetRate(
+          settings.targetRateKgPerWeek === null
+            ? ""
+            : formatRate(settings.targetRateKgPerWeek),
+        );
         setPeriods([...stored].reverse());
         setLoaded(true);
       })();
@@ -66,7 +77,10 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.heading}>Targets</Text>
       <Field
         label="Target weight (kg)"
@@ -86,18 +100,27 @@ export default function SettingsScreen() {
         hint="+ means gaining, − means losing."
         error={errors.targetRate}
       />
-      <Pressable accessibilityRole="button" onPress={saveTargets} style={styles.primaryButton}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={saveTargets}
+        style={styles.primaryButton}
+      >
         <Text style={styles.primaryButtonText}>Save targets</Text>
       </Pressable>
       {saved ? <Text style={styles.saved}>Saved</Text> : null}
 
       <View style={styles.sectionHeader}>
         <Text style={styles.heading}>Calorie periods</Text>
-        <Pressable accessibilityRole="button" onPress={() => router.push("/period/new")}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/period/new")}
+        >
           <Text style={styles.link}>Add period</Text>
         </Pressable>
       </View>
-      {periods.length === 0 ? <Text style={styles.muted}>No periods yet.</Text> : null}
+      {periods.length === 0 ? (
+        <Text style={styles.muted}>No periods yet.</Text>
+      ) : null}
       {periods.map((period) => (
         <Pressable
           key={period.id}
@@ -112,7 +135,9 @@ export default function SettingsScreen() {
           <Text style={styles.muted}>
             {period.startDate} → {period.endDate ?? "ongoing"}
           </Text>
-          {period.reason ? <Text style={styles.muted}>{period.reason}</Text> : null}
+          {period.reason ? (
+            <Text style={styles.muted}>{period.reason}</Text>
+          ) : null}
         </Pressable>
       ))}
     </ScrollView>
@@ -122,12 +147,27 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { padding: 16, gap: 12 },
   heading: { fontSize: 18, fontWeight: "700", color: colors.text },
-  sectionHeader: { marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  primaryButton: { backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 12, alignItems: "center" },
+  sectionHeader: {
+    marginTop: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  primaryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
   primaryButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   saved: { color: colors.primary, textAlign: "center" },
   link: { color: colors.primary, fontSize: 16, fontWeight: "600" },
   muted: { color: colors.muted },
-  period: { backgroundColor: colors.surface, borderRadius: 8, padding: 12, gap: 2 },
+  period: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 12,
+    gap: 2,
+  },
   periodTitle: { fontSize: 16, fontWeight: "600", color: colors.text },
 });
