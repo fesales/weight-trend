@@ -8,7 +8,13 @@ import { DB_NAME } from "@/db/migrations";
 export default function RootLayout() {
   return (
     <SQLiteProvider databaseName={DB_NAME} onInit={initDb}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="period/[id]"
+          options={{ presentation: "modal", headerShown: true }}
+        />
+      </Stack>
       <StatusBar style="auto" />
     </SQLiteProvider>
   );

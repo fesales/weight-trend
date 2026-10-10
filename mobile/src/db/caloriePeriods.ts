@@ -34,13 +34,17 @@ export type PeriodInput = {
   reason: string | null;
 };
 
+export async function getPeriod(db: SQLiteDatabase, id: number): Promise<CaloriePeriod | null> {
+  const row = await db.getFirstAsync<Row>("SELECT * FROM calorie_periods WHERE id = ?", id);
+  return row ? toPeriod(row) : null;
+}
+
 /** Oldest first. */
 export async function listPeriods(db: SQLiteDatabase): Promise<CaloriePeriod[]> {
   const rows = await db.getAllAsync<Row>("SELECT * FROM calorie_periods ORDER BY start_date ASC");
   return rows.map(toPeriod);
 }
 
-// LATER (step 4): reject overlapping periods before insert/update.
 export async function insertPeriod(db: SQLiteDatabase, input: PeriodInput): Promise<number> {
   const result = await db.runAsync(
     `INSERT INTO calorie_periods (start_date, end_date, target_kcal, label, reason)
@@ -71,4 +75,22 @@ export async function updatePeriod(db: SQLiteDatabase, id: number, input: Period
 
 export async function deletePeriod(db: SQLiteDatabase, id: number): Promise<void> {
   await db.runAsync("DELETE FROM calorie_periods WHERE id = ?", id);
+}
+
+export async function insertPeriodClosingPrevious(
+  db: SQLiteDatabase,
+  close: { id: number; endDate: DateString },
+  input: PeriodInput,
+): Promise<number> {
+  let newId = 0;
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(
+      `UPDATE calorie_periods SET end_date = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+       WHERE id = ?`,
+      close.endDate,
+      close.id,
+    );
+    newId = await insertPeriod(tx, input);
+  });
+  return newId;
 }

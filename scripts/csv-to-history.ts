@@ -1,14 +1,9 @@
-// Converts my history CSV into mobile/data/history.json, which the app seeds
-// into SQLite on first launch.
-//
-//   node --experimental-strip-types --no-warnings scripts/csv-to-history.ts <input.csv>
-//
-// Strict on purpose: any problem stops the script (nothing is written) and
-// every problem is listed with its line number.
+// LATER: unit tests for parseCsv/convert.
 
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { isRealDate } from "../mobile/src/domain/dates.ts";
 import { FLAGS, isFlag } from "../mobile/src/domain/flags.ts";
 import type { Flag } from "../mobile/src/domain/flags.ts";
 
@@ -30,7 +25,6 @@ type HistoryRow = {
   note: string | null;
 };
 
-/** RFC 4180-ish: quoted fields may contain commas, newlines and "" escapes. */
 function parseCsv(text: string): { line: number; fields: string[] }[] {
   const records: { line: number; fields: string[] }[] = [];
   let fields: string[] = [];
@@ -72,20 +66,8 @@ function parseCsv(text: string): { line: number; fields: string[] }[] {
     fields.push(field);
     records.push({ line: recordLine, fields });
   }
-  // Ignore blank lines.
   return records.filter(
     (r) => !(r.fields.length === 1 && r.fields[0].trim() === ""),
-  );
-}
-
-function isRealDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [y, m, d] = value.split("-").map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  return (
-    date.getUTCFullYear() === y &&
-    date.getUTCMonth() === m - 1 &&
-    date.getUTCDate() === d
   );
 }
 

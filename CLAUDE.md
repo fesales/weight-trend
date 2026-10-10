@@ -4,7 +4,7 @@ Personal Android app that gives me a short daily summary of my weight trend agai
 
 ## Current step
 
-v0, step 3 done. Next: step 4, Settings screen. (Update this line as we go.)
+v0, step 4 done. Next: step 5, trend maths. (Update this line as we go.)
 
 ## How to work with me
 
@@ -14,6 +14,7 @@ v0, step 3 done. Next: step 4, Settings screen. (Update this line as we go.)
 - Don't add a dependency without saying why. Prefer fewer libraries.
 - Don't jump ahead to "later" features, even if it seems easy. Leave a `// LATER:` comment if something is worth noting.
 - Small, focused commits, one per step or sub-step.
+- **Keep comments to a minimum.** Only add one when the code genuinely can't be understood without it (a non-obvious reason, a gotcha, a `// LATER:`). No comments that restate the code, no doc comments on self-explanatory functions or props.
 
 ## v0 goal
 
@@ -48,7 +49,7 @@ The data model should make the Health Connect switch easy later, but don't build
 - Android only for v0; iOS may come later, so avoid Android-only assumptions outside Health Connect. v0 runs in Expo Go, so no native modules.
 - Routes live in `mobile/src/app/` (Expo Router); non-route code goes elsewhere under `mobile/src/`. `@/*` maps to `mobile/src/*`.
 - `expo-sqlite` for storage. Plain SQL unless there's a good reason for an ORM (Drizzle is the one to consider if so).
-- Jest for unit tests on the maths.
+- Jest (`jest-expo` + React Native Testing Library) in `mobile/`. **Every change adds or updates its tests.** Style: `describe("<file>")` → `describe("GIVEN …")` → `it("SHOULD …")`, arrange/act/assert separated by blank lines. Tests sit next to the code; screen tests go in `mobile/src/__tests__/`. Data-layer tests use `createMockDb()` (`mobile/src/test/mockDb.ts`). In RNTL v14 `render` and `fireEvent` are async: always `await` them. Run `npm test` and `npm run lint` before handing back.
 - Server: Node, Express, TypeScript.
 - Zod (or similar) to validate the LLM's structured output on the server.
 
@@ -77,7 +78,7 @@ These matter more than anything else here.
 - **Each weigh-in is matched to the calorie period it falls in.**
 - **Target and actual intake are always shown separately.** If the target is 2,800 but I averaged 2,550, the model should see both, so it doesn't blame the target for what's really adherence.
 - **The API key never goes in the app.** Only the server has it.
-- Units are kg and kcal. Dates are local `YYYY-MM-DD` strings.
+- Units are kg and kcal. Dates are local `YYYY-MM-DD` strings; use the helpers in `mobile/src/domain/dates.ts` and never `new Date("YYYY-MM-DD")` (parses as UTC).
 
 ## Data model
 
@@ -96,9 +97,11 @@ Schema lives in `mobile/src/db/migrations.ts` (append-only list; `PRAGMA user_ve
 **calorie_periods**
 - `id`, `start_date`, `end_date` (null = current, open-ended period), `target_kcal`, `label`
 - `reason` TEXT, nullable: why this change was made, e.g. "rate stalled at +0.1 kg/week for 3 weeks"
+- Rules (in `mobile/src/domain/periods.ts`): periods never share a day; gaps are allowed; at most one open-ended period. Adding a new open-ended period after the current one offers to end the current one the day before (both saved in one transaction). Anything else that overlaps is blocked, naming the clashing period.
 
 **settings** (single row, `id = 1`)
 - `target_weight_kg`, `target_rate_kg_per_week`, both null until set
+- **Rate is signed: positive = gaining, negative = losing** (kg/week). The Settings screen shows it with its sign (`+0.25`).
 
 **analyses** (cache, one per date, so reopening the app doesn't call the API again)
 - `date`, `request_hash`, `request_json`, `response_json`, `created_at`
@@ -207,9 +210,8 @@ Setup:
 ### Raised in review, to decide when we reach the step
 
 - (step 1/9) Expo Go loads the app from the laptop's dev server, so it won't open away from home. Use a standalone preview APK (EAS build, no native code) for daily use?
-- (step 4) Calorie periods: overlap check on save; gaps allowed.
 - (step 5) Exact rate definitions: rolling vs calendar weeks, and how the 14/21-day rates are calculated.
-- (step 5) Sign convention for target rate (+ = gaining) and what ahead/behind means in each direction.
+- (step 5) What ahead/behind means in each direction (the rate sign is settled: + = gaining).
 - (step 5) Period boundary: which period a day's calories and weigh-in belong to, given D-1 pairing and weight lag.
 - (step 5/8) Compute `trend` and `status` in code instead of having the model produce them ("maths in code").
 - (step 8) Enforce the 14-day rule for `calorieAdjustment` on the server after validation, not only in the prompt.

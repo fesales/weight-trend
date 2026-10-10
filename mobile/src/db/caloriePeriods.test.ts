@@ -1,6 +1,14 @@
 import { createMockDb } from "@/test/mockDb";
 
-import { deletePeriod, insertPeriod, listPeriods, updatePeriod, type PeriodInput } from "./caloriePeriods";
+import {
+  deletePeriod,
+  getPeriod,
+  insertPeriod,
+  insertPeriodClosingPrevious,
+  listPeriods,
+  updatePeriod,
+  type PeriodInput,
+} from "./caloriePeriods";
 
 const INPUT: PeriodInput = {
   startDate: "2026-09-01",
@@ -85,6 +93,70 @@ describe("caloriePeriods.ts", () => {
       await deletePeriod(db, 3);
 
       expect(mocks.runAsync).toHaveBeenCalledWith("DELETE FROM calorie_periods WHERE id = ?", 3);
+    });
+  });
+
+  describe("GIVEN a period id to look up", () => {
+    it("SHOULD map the stored row", async () => {
+      const { db, mocks } = createMockDb();
+      mocks.getFirstAsync.mockResolvedValue(ROW);
+
+      const result = await getPeriod(db, 3);
+
+      expect(result).toEqual(expect.objectContaining({ id: 3, label: "Cut", endDate: null }));
+      expect(mocks.getFirstAsync).toHaveBeenCalledWith("SELECT * FROM calorie_periods WHERE id = ?", 3);
+    });
+
+    it("SHOULD return null when it doesn't exist", async () => {
+      const { db } = createMockDb();
+
+      const result = await getPeriod(db, 99);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("GIVEN a new current period that closes the open one", () => {
+    it("SHOULD end the open period and insert the new one in one transaction", async () => {
+      const { db, mocks } = createMockDb();
+      mocks.runAsync
+        .mockResolvedValueOnce({ lastInsertRowId: 0, changes: 1 })
+        .mockResolvedValueOnce({ lastInsertRowId: 8, changes: 1 });
+
+      const result = await insertPeriodClosingPrevious(db, { id: 3, endDate: "2026-09-30" }, {
+        ...INPUT,
+        startDate: "2026-10-01",
+      });
+
+      expect(result).toBe(8);
+      expect(mocks.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
+      expect(mocks.runAsync).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining("UPDATE calorie_periods SET end_date = ?"),
+        "2026-09-30",
+        3,
+      );
+      expect(mocks.runAsync).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining("INSERT INTO calorie_periods"),
+        "2026-10-01",
+        null,
+        2800,
+        "Cut",
+        "rate stalled",
+      );
+    });
+
+    it("SHOULD reject, so the transaction rolls back, when the insert fails", async () => {
+      const { db, mocks } = createMockDb();
+      mocks.runAsync
+        .mockResolvedValueOnce({ lastInsertRowId: 0, changes: 1 })
+        .mockRejectedValueOnce(new Error("CHECK constraint failed"));
+
+      const act = insertPeriodClosingPrevious(db, { id: 3, endDate: "2026-09-30" }, INPUT);
+
+      await expect(act).rejects.toThrow("CHECK constraint failed");
+      expect(mocks.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
     });
   });
 });
