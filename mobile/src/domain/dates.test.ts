@@ -1,8 +1,10 @@
 import {
   addDays,
+  daysBetween,
   isRealDate,
   parseDateString,
   toDateString,
+  startOfWeek,
   todayLocal,
 } from "./dates";
 
@@ -96,6 +98,40 @@ describe("dates.ts", () => {
       const act = () => parseDateString("nope");
 
       expect(act).toThrow('invalid date "nope"');
+    });
+  });
+
+  describe("GIVEN two dates", () => {
+    it.each([
+      ["2026-10-01", "2026-10-11", 10],
+      ["2026-10-11", "2026-10-01", -10],
+      ["2026-12-25", "2027-01-08", 14],
+      ["2026-03-22", "2026-04-05", 14],
+      ["2026-10-11", "2026-10-11", 0],
+    ])("SHOULD count the days from %s to %s as %i", (from, to, expected) => {
+      const result = daysBetween(from, to);
+
+      expect(result).toBe(expected);
+    });
+
+    it("SHOULD throw on an invalid date", () => {
+      const act = () => daysBetween("2026-10-01", "2026-02-30");
+
+      expect(act).toThrow('invalid date "2026-02-30"');
+    });
+  });
+
+  describe("GIVEN a date to find its week", () => {
+    it.each([
+      ["2026-10-12", "2026-10-12"],
+      ["2026-10-14", "2026-10-12"],
+      ["2026-10-18", "2026-10-12"],
+      ["2026-10-01", "2026-09-28"],
+      ["2027-01-01", "2026-12-28"],
+    ])("SHOULD start the week of %s on Monday %s", (date, expected) => {
+      const result = startOfWeek(date);
+
+      expect(result).toBe(expected);
     });
   });
 });

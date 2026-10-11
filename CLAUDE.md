@@ -76,7 +76,8 @@ These matter more than anything else here.
 - **Pairing happens in code**: a morning weigh-in on date D is matched with calories from D-1.
 - **Flags don't change the maths.** The 7-day average and rate use every day. Flags go to the model so it can explain a jump instead of reacting to it.
 - **Calorie suggestions only from 2–3 weeks of trend**, never from a single day. If there isn't enough data, the model says so and suggests no change.
-- **Each weigh-in is matched to the calorie period it falls in.**
+- **Every value belongs to the period containing its own date**: calories by the date eaten, weigh-ins by the date weighed. Periods never overlap, `end_date` is inclusive (null for the current period), and days outside any period have no period.
+- **Trend and status are computed in the app**, sent to the server as inputs, and returned alongside the model's output. The model never decides them.
 - **Target and actual intake are always shown separately.** If the target is 2,800 but I averaged 2,550, the model should see both, so it doesn't blame the target for what's really adherence.
 - **The API key never goes in the app.** Only the server has it.
 - Units are kg and kcal. Dates are local `YYYY-MM-DD` strings; use the helpers in `mobile/src/domain/dates.ts` and never `new Date("YYYY-MM-DD")` (parses as UTC).
@@ -103,6 +104,8 @@ Schema lives in `mobile/src/db/migrations.ts` (append-only list; `PRAGMA user_ve
 **settings** (single row, `id = 1`)
 - `target_weight_kg`, `target_rate_kg_per_week`, both null until set
 - **Rate is signed: positive = gaining, negative = losing** (kg/week). The Settings screen shows it with its sign (`+0.25`).
+- `rate_tolerance_kg_per_week` REAL, default 0.1: used for both status and trend.
+- Validation: the target rate's sign must match the direction from current weight to target weight. A rate of 0 means maintain and skips the check, as does having no weigh-ins or no target weight.
 
 **analyses** (cache, one per date, so reopening the app doesn't call the API again)
 - `date`, `request_hash`, `request_json`, `response_json`, `created_at`
@@ -141,19 +144,45 @@ Past calorie periods (with labels and reasons) are entered through the Settings 
 
 ## Trend maths
 
-Pure functions in the app, unit tested against fixtures.
+Pure functions in `mobile/src/domain/trend/`, unit tested against fixtures. They take `today` (D) as an argument and return full precision; rounding happens on display and in the payload. Return null rather than a made-up number when there isn't enough data.
 
-- 7-day average weight (from weigh-ins available in the last 7 days; needs at least 4).
-- Weekly rate: this week's 7-day average minus last week's, in kg/week. Also a 14 and 21-day rate for a longer view.
-- Distance to target weight, and rough weeks to target at the current rate.
-- Average calories over the last 7 days vs the current period's target.
-- Weekly averages (weight and calories per week) across all history.
-- **Per-period summary** for every calorie period: label, dates, reason, target, actual average intake, average weight at the start and end, and the weekly rate during the period.
-- Handle missing days without breaking. Return null rather than a made-up number when there isn't enough data.
+**Rolling windows, anchored on today (D).** Not calendar weeks.
+- `avg7(D)` = mean of weigh-ins in [D-6, D]. Needs at least 4 weigh-ins, otherwise null.
+- Weekly rate = `avg7(D) - avg7(D-7)`.
+- 14-day rate = `(avg7(D) - avg7(D-14)) / 2`, in kg/week.
+- 21-day rate = `(avg7(D) - avg7(D-21)) / 3`, in kg/week.
+- If either window is null, the rate is null.
+- Current weight = `avg7(D)`, falling back to the latest weigh-in.
+
+**Trend** (14-day rate, tolerance from settings): `gaining` if > +tolerance, `losing` if < -tolerance, otherwise `stable`. Null rate → `not_enough_data` is reported via status; trend is null.
+
+**Status** (14-day rate vs `target_rate_kg_per_week`): `too_fast | on_track | too_slow | wrong_direction | not_enough_data`.
+- `not_enough_data` if the 14-day rate or the target rate is null.
+- `on_track` if `|actual - target| <= tolerance`.
+- `wrong_direction` if outside the tolerance and the actual rate's sign is opposite to the target's.
+- `too_fast` / `too_slow` if outside the tolerance but moving in the right direction.
+- Target 0 (maintain): `on_track` within the tolerance, otherwise `too_fast`.
+
+**Targets**
+- Distance to target = target weight − current weight.
+- Weeks to target = distance ÷ 14-day rate. Null if the rate is null, zero, or pointing away from the target.
+
+**Calories**
+- 7-day average over [D-7, D-1] (today isn't eaten yet). Needs at least 4 days with calories, otherwise null.
+- Compared with the target of the period containing D-1. Target and actual are always reported separately.
+
+**Weekly averages** (history only): calendar weeks, Monday to Sunday, across all history. Average weight and calories per week, with the number of weigh-ins and calorie days; an average is null only when its count is 0.
+
+**Per-period summary**, for every period: label, dates, reason, target, actual average intake (days with calories in the period, up to D-1), start weight, end weight and rate.
+- The current period ends at D for these calculations.
+- Start weight = average of the period's first 7 days; end weight = average of its last 7 days. Each needs at least 4 weigh-ins.
+- Rate = (end − start) ÷ weeks between the two windows.
+- Null if the period is shorter than 14 days or either window has fewer than 4 weigh-ins.
 
 ## What the app sends to the server
 
-- Settings (target weight, target rate) and the current calorie period.
+- Settings (target weight, target rate, tolerance) and the current calorie period.
+- The code-computed `trend` and `status`.
 - The computed numbers above, including weekly averages and per-period summaries.
 - All daily rows (date, weight, calories, flags, note). This stays small (roughly 365 rows a year), and it lets the server change how much history it uses without an app update.
 
@@ -175,14 +204,24 @@ Setup:
 
 ### Structured output
 
+The model returns:
+
 ```ts
 {
-  trend: "gaining" | "losing" | "stable",
-  status: "ahead" | "on_track" | "behind" | "not_enough_data",
   summary: string,          // 2–3 plain sentences
   flagsNote: string | null, // explains a jump if flags suggest a reason
   suggestion: string,
   calorieAdjustment: { kcal: number, reason: string } | null
+}
+```
+
+The server responds with that plus the app's own `trend` and `status` (passed through unchanged), so the app has one response to show:
+
+```ts
+{
+  trend: "gaining" | "losing" | "stable" | null,
+  status: "too_fast" | "on_track" | "too_slow" | "wrong_direction" | "not_enough_data",
+  summary, flagsNote, suggestion, calorieAdjustment
 }
 ```
 
@@ -211,10 +250,6 @@ Setup:
 ### Raised in review, to decide when we reach the step
 
 - (step 1/9) Expo Go loads the app from the laptop's dev server, so it won't open away from home. Use a standalone preview APK (EAS build, no native code) for daily use?
-- (step 5) Exact rate definitions: rolling vs calendar weeks, and how the 14/21-day rates are calculated.
-- (step 5) What ahead/behind means in each direction (the rate sign is settled: + = gaining).
-- (step 5) Period boundary: which period a day's calories and weigh-in belong to, given D-1 pairing and weight lag.
-- (step 5/8) Compute `trend` and `status` in code instead of having the model produce them ("maths in code").
 - (step 8) Enforce the 14-day rule for `calorieAdjustment` on the server after validation, not only in the prompt.
 - (step 8) Server logs would contain all daily rows. Decide what gets logged, given the host keeps logs.
 - (step 9) Expo/EAS account: the CLI is signed in as `warble-app`, but this project should use a different account. Decide between a per-project `EXPO_TOKEN` (gitignored `.envrc`) and a global switch before `eas init`.

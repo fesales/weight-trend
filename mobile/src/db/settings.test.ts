@@ -5,6 +5,7 @@ import { getSettings, updateSettings } from "./settings";
 const ROW = {
   target_weight_kg: 75,
   target_rate_kg_per_week: -0.5,
+  rate_tolerance_kg_per_week: 0.1,
   updated_at: "2026-10-01T00:00:00.000Z",
 };
 
@@ -17,6 +18,7 @@ describe("settings.ts", () => {
       await expect(getSettings(db)).resolves.toEqual({
         targetWeightKg: 75,
         targetRateKgPerWeek: -0.5,
+        rateToleranceKgPerWeek: 0.1,
         updatedAt: "2026-10-01T00:00:00.000Z",
       });
     });
@@ -41,6 +43,7 @@ describe("settings.ts", () => {
         expect.stringContaining("UPDATE settings"),
         74,
         -0.5,
+        0.1,
       );
     });
 
@@ -54,6 +57,21 @@ describe("settings.ts", () => {
         expect.stringContaining("UPDATE settings"),
         75,
         null,
+        0.1,
+      );
+    });
+
+    it("SHOULD update the tolerance", async () => {
+      const { db, mocks } = createMockDb();
+      mocks.getFirstAsync.mockResolvedValue(ROW);
+
+      await updateSettings(db, { rateToleranceKgPerWeek: 0.15 });
+
+      expect(mocks.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining("rate_tolerance_kg_per_week = ?"),
+        75,
+        -0.5,
+        0.15,
       );
     });
   });

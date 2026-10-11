@@ -54,7 +54,32 @@ describe("migrations.ts", () => {
       );
       expect(mocks.execAsync).toHaveBeenNthCalledWith(
         3,
+        expect.stringContaining(
+          "ALTER TABLE settings ADD COLUMN rate_tolerance_kg_per_week",
+        ),
+      );
+      expect(mocks.execAsync).toHaveBeenNthCalledWith(
+        4,
         `PRAGMA user_version = ${SCHEMA_VERSION}`,
+      );
+    });
+  });
+
+  describe("GIVEN a database at schema v1", () => {
+    it("SHOULD run only migration 2", async () => {
+      const { db, mocks } = createMockDb();
+      mocks.getFirstAsync.mockResolvedValue({ user_version: 1 });
+
+      await migrate(db);
+
+      expect(mocks.execAsync).toHaveBeenCalledTimes(3);
+      expect(mocks.execAsync).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining("ADD COLUMN rate_tolerance_kg_per_week"),
+      );
+      expect(mocks.execAsync).toHaveBeenNthCalledWith(
+        3,
+        "PRAGMA user_version = 2",
       );
     });
   });

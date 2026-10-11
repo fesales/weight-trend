@@ -37,3 +37,19 @@ export function addDays(value: DateString, days: number): DateString {
   const date = new Date(Date.UTC(y, m - 1, d + days));
   return date.toISOString().slice(0, 10);
 }
+
+export function daysBetween(from: DateString, to: DateString): number {
+  if (!isRealDate(from)) throw new Error(`invalid date "${from}"`);
+  if (!isRealDate(to)) throw new Error(`invalid date "${to}"`);
+  const utc = (value: DateString) => {
+    const [y, m, d] = value.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((utc(to) - utc(from)) / 86_400_000);
+}
+
+export function startOfWeek(value: DateString): DateString {
+  const [y, m, d] = value.split("-").map(Number);
+  const dayFromMonday = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+  return addDays(value, -dayFromMonday);
+}

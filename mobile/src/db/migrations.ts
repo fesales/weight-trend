@@ -54,6 +54,10 @@ const MIGRATIONS: string[] = [
     value TEXT NOT NULL
   );
   `,
+  `
+  ALTER TABLE settings ADD COLUMN rate_tolerance_kg_per_week REAL NOT NULL
+    DEFAULT 0.1 CHECK (rate_tolerance_kg_per_week > 0);
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -4,9 +4,13 @@ import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { listPeriods } from "@/db/caloriePeriods";
+import { listEntries } from "@/db/dailyEntries";
 import { getSettings, updateSettings } from "@/db/settings";
 import type { CaloriePeriod } from "@/db/types";
+import { todayLocal } from "@/domain/dates";
 import { formatRate, parseTargets, type TargetsErrors } from "@/domain/targets";
+import { currentWeight } from "@/domain/trend/rates";
+import { toSeries } from "@/domain/trend/series";
 import { Field } from "@/ui/Field";
 import { colors } from "@/ui/theme";
 
@@ -14,6 +18,8 @@ export default function SettingsScreen() {
   const db = useSQLiteContext();
   const [targetWeight, setTargetWeight] = useState("");
   const [targetRate, setTargetRate] = useState("");
+  const [tolerance, setTolerance] = useState("");
+  const [currentWeightKg, setCurrentWeightKg] = useState<number | null>(null);
   const [errors, setErrors] = useState<TargetsErrors>({});
   const [saved, setSaved] = useState(false);
   // Hide the form until loaded, so a late load can't overwrite typing.
@@ -24,9 +30,10 @@ export default function SettingsScreen() {
     useCallback(() => {
       let active = true;
       (async () => {
-        const [settings, stored] = await Promise.all([
+        const [settings, stored, entries] = await Promise.all([
           getSettings(db),
           listPeriods(db),
+          listEntries(db),
         ]);
         if (!active) return;
         setTargetWeight(
@@ -39,6 +46,8 @@ export default function SettingsScreen() {
             ? ""
             : formatRate(settings.targetRateKgPerWeek),
         );
+        setTolerance(String(settings.rateToleranceKgPerWeek));
+        setCurrentWeightKg(currentWeight(toSeries(entries), todayLocal()));
         setPeriods([...stored].reverse());
         setLoaded(true);
       })();
@@ -49,7 +58,10 @@ export default function SettingsScreen() {
   );
 
   const saveTargets = async () => {
-    const result = parseTargets({ targetWeight, targetRate });
+    const result = parseTargets(
+      { targetWeight, targetRate, tolerance },
+      currentWeightKg,
+    );
     if (!result.ok) {
       setErrors(result.errors);
       setSaved(false);
@@ -58,6 +70,7 @@ export default function SettingsScreen() {
     await updateSettings(db, {
       targetWeightKg: result.targetWeightKg,
       targetRateKgPerWeek: result.targetRateKgPerWeek,
+      rateToleranceKgPerWeek: result.rateToleranceKgPerWeek,
     });
     setErrors({});
     setSaved(true);
@@ -97,8 +110,16 @@ export default function SettingsScreen() {
         onChangeText={edit(setTargetRate)}
         keyboardType="numbers-and-punctuation"
         placeholder="e.g. +0.25 or -0.5"
-        hint="+ means gaining, − means losing."
+        hint="+ means gaining, − means losing, 0 means maintain."
         error={errors.targetRate}
+      />
+      <Field
+        label="Tolerance (kg/week)"
+        value={tolerance}
+        onChangeText={edit(setTolerance)}
+        keyboardType="decimal-pad"
+        hint="How far from the target rate still counts as on track."
+        error={errors.tolerance}
       />
       <Pressable
         accessibilityRole="button"

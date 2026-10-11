@@ -36,6 +36,7 @@ export type CaloriePeriod = {
 export type Settings = {
   targetWeightKg: number | null;
   targetRateKgPerWeek: number | null;
+  rateToleranceKgPerWeek: number;
   updatedAt: string;
 };
 

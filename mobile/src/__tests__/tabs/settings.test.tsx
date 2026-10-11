@@ -3,8 +3,9 @@ import { router } from "expo-router";
 
 import SettingsScreen from "@/app/(tabs)/settings";
 import { listPeriods } from "@/db/caloriePeriods";
+import { listEntries } from "@/db/dailyEntries";
 import { getSettings, updateSettings } from "@/db/settings";
-import type { CaloriePeriod } from "@/db/types";
+import type { CaloriePeriod, DailyEntry } from "@/db/types";
 
 // Must be a stable instance, or the focus effect re-runs forever.
 jest.mock("expo-sqlite", () => {
@@ -24,10 +25,50 @@ jest.mock("@/db/settings", () => ({
   updateSettings: jest.fn(),
 }));
 jest.mock("@/db/caloriePeriods", () => ({ listPeriods: jest.fn() }));
+jest.mock("@/db/dailyEntries", () => ({ listEntries: jest.fn() }));
+jest.mock("@/domain/dates", () => ({
+  ...jest.requireActual<typeof import("@/domain/dates")>("@/domain/dates"),
+  todayLocal: () => "2026-10-11",
+}));
 
 const mockGetSettings = getSettings as jest.Mock;
 const mockUpdateSettings = updateSettings as jest.Mock;
 const mockListPeriods = listPeriods as jest.Mock;
+const mockListEntries = listEntries as jest.Mock;
+
+function weighIn(date: string, weightKg: number): DailyEntry {
+  return {
+    date,
+    weightKg,
+    weightSource: "manual",
+    caloriesKcal: null,
+    caloriesSource: null,
+    flags: [],
+    note: null,
+    createdAt: "",
+    updatedAt: "",
+  };
+}
+
+async function saveTargets(values: {
+  targetWeight?: string;
+  targetRate?: string;
+  tolerance?: string;
+}) {
+  await screen.findByText("No periods yet.");
+  const fields = {
+    targetWeight: "Target weight (kg)",
+    targetRate: "Target rate (kg/week)",
+    tolerance: "Tolerance (kg/week)",
+  } as const;
+  for (const [key, label] of Object.entries(fields)) {
+    const value = values[key as keyof typeof fields];
+    if (value !== undefined) {
+      await fireEvent.changeText(screen.getByLabelText(label), value);
+    }
+  }
+  await fireEvent.press(screen.getByRole("button", { name: "Save targets" }));
+}
 
 function period(overrides: Partial<CaloriePeriod>): CaloriePeriod {
   return {
@@ -49,9 +90,11 @@ describe("settings.tsx", () => {
     mockGetSettings.mockResolvedValue({
       targetWeightKg: null,
       targetRateKgPerWeek: null,
+      rateToleranceKgPerWeek: 0.1,
       updatedAt: "",
     });
     mockListPeriods.mockResolvedValue([]);
+    mockListEntries.mockResolvedValue([]);
     mockUpdateSettings.mockResolvedValue(undefined);
   });
 
@@ -60,6 +103,7 @@ describe("settings.tsx", () => {
       mockGetSettings.mockResolvedValue({
         targetWeightKg: 82,
         targetRateKgPerWeek: 0.25,
+        rateToleranceKgPerWeek: 0.15,
         updatedAt: "",
       });
 
@@ -68,6 +112,9 @@ describe("settings.tsx", () => {
       expect(await screen.findByDisplayValue("82")).toBeOnTheScreen();
       expect(screen.getByLabelText("Target rate (kg/week)")).toHaveDisplayValue(
         "+0.25",
+      );
+      expect(screen.getByLabelText("Tolerance (kg/week)")).toHaveDisplayValue(
+        "0.15",
       );
     });
   });
@@ -104,6 +151,7 @@ describe("settings.tsx", () => {
       expect(mockUpdateSettings).toHaveBeenCalledWith(expect.anything(), {
         targetWeightKg: 82.5,
         targetRateKgPerWeek: -0.5,
+        rateToleranceKgPerWeek: 0.1,
       });
     });
   });
@@ -132,6 +180,72 @@ describe("settings.tsx", () => {
         screen.getByText("Number between -2 and +2 kg/week"),
       ).toBeOnTheScreen();
       expect(mockUpdateSettings).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("GIVEN a tolerance typed in", () => {
+    it("SHOULD save a valid one", async () => {
+      await render(<SettingsScreen />);
+
+      await saveTargets({ tolerance: "0,2" });
+
+      expect(await screen.findByText("Saved")).toBeOnTheScreen();
+      expect(mockUpdateSettings).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ rateToleranceKgPerWeek: 0.2 }),
+      );
+    });
+
+    it("SHOULD reject one out of range", async () => {
+      await render(<SettingsScreen />);
+
+      await saveTargets({ tolerance: "0" });
+
+      expect(
+        await screen.findByText("Number between 0.01 and 1 kg/week"),
+      ).toBeOnTheScreen();
+      expect(mockUpdateSettings).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("GIVEN recent weigh-ins below the target weight", () => {
+    beforeEach(() => {
+      mockListEntries.mockResolvedValue(
+        ["2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"].map((date) =>
+          weighIn(date, 79.4),
+        ),
+      );
+    });
+
+    it("SHOULD reject a negative rate", async () => {
+      await render(<SettingsScreen />);
+
+      await saveTargets({ targetWeight: "82", targetRate: "-0.25" });
+
+      expect(
+        await screen.findByText(
+          "Target 82 kg is above your current 79.4 kg, so the rate should be positive.",
+        ),
+      ).toBeOnTheScreen();
+      expect(mockUpdateSettings).not.toHaveBeenCalled();
+    });
+
+    it.each(["+0.25", "0"])("SHOULD save a rate of %s", async (targetRate) => {
+      await render(<SettingsScreen />);
+
+      await saveTargets({ targetWeight: "82", targetRate });
+
+      expect(await screen.findByText("Saved")).toBeOnTheScreen();
+    });
+  });
+
+  describe("GIVEN no weigh-ins", () => {
+    it("SHOULD skip the direction check", async () => {
+      await render(<SettingsScreen />);
+
+      await saveTargets({ targetWeight: "82", targetRate: "-0.25" });
+
+      expect(await screen.findByText("Saved")).toBeOnTheScreen();
     });
   });
 
